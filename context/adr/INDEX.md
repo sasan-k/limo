@@ -9,3 +9,9 @@
 - ADR-5 [accepted] Functional tests via HTTP, fakes only external — scope: testing
 - ADR-6 [accepted] Self-hosted Messages API loop, isolated context, enforced tools — scope: agents
 - ADR-7 [accepted] Local single-user, no auth in v1 — scope: auth, api
+- ADR-8 [accepted] mise tasks are the only developer interface — scope: infra
+- ADR-9 [accepted] Secrets from env only, never stored or sent — scope: infra, agents, host
+- ADR-10 [accepted] Executor runs argv via mise exec in workspace — scope: agents, infra
+- ADR-11 [accepted] Scheduler port, concurrency setting, v1 in-process — scope: runner
+- ADR-12 [proposed] One RepoHost contract suite on recorded HTTP — scope: host, testing
+- ADR-13 [accepted] shadcn/ui theme tokens, dark/light, AA checked — scope: ui
