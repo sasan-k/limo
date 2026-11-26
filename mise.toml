@@ -1,0 +1,52 @@
+[tools]
+node = "22.23.5"
+python = "3.12.16"
+uv = "0.13.10"
+
+[tasks.setup]
+description = "Install engine dependencies"
+dir = "engine"
+run = "uv sync"
+
+[tasks.up]
+description = "Start the engine on 127.0.0.1:8700"
+dir = "engine"
+run = "uv run uvicorn limo.app:app_from_env --factory --host 127.0.0.1 --port 8700"
+
+[tasks."test:engine"]
+description = "Run engine tests; pass pytest args after --"
+dir = "engine"
+run = "uv run pytest"
+
+[tasks.test]
+description = "Run all test suites"
+depends = ["test:engine"]
+
+[tasks.lint]
+description = "Lint and format check (ruff)"
+dir = "engine"
+run = ["uv run ruff check .", "uv run ruff format --check ."]
+
+[tasks.fmt]
+description = "Auto-format and auto-fix (ruff)"
+dir = "engine"
+run = ["uv run ruff check --fix .", "uv run ruff format ."]
+
+[tasks.types]
+description = "Type check (mypy --strict)"
+dir = "engine"
+run = "uv run mypy"
+
+[tasks.arch]
+description = "Architecture import contracts (import-linter)"
+dir = "engine"
+run = "uv run lint-imports"
+
+[tasks.dup]
+description = "Duplicate code check (jscpd)"
+dir = "engine"
+run = "npx --yes jscpd@4.0.5 --threshold 0 --min-lines 10 --gitignore limo"
+
+[tasks.gates]
+description = "All quality gates"
+depends = ["lint", "types", "arch", "dup"]

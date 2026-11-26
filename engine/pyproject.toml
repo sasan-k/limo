@@ -1,0 +1,52 @@
+[project]
+name = "limo"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["fastapi", "uvicorn", "pydantic-settings"]
+
+[dependency-groups]
+dev = ["pytest", "httpx", "ruff", "mypy", "import-linter"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["limo"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "C90", "PLR0913", "TID251"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-args = 5
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"subprocess".msg = "Run commands through limo.executor (ADR-10)"
+
+[tool.ruff.lint.per-file-ignores]
+"limo/executor/local.py" = ["TID251", "S603", "S607"]
+"tests/**" = ["TID251", "S101", "S603", "S607"]
+
+[tool.mypy]
+strict = true
+packages = ["limo"]
+
+[tool.importlinter]
+root_package = "limo"
+
+[[tool.importlinter.contracts]]
+name = "Services use ports, not adapters (ADR-4)"
+type = "forbidden"
+source_modules = ["limo.projects", "limo.agents", "limo.store", "limo.common"]
+forbidden_modules = ["limo.executor.local", "limo.api", "limo.app"]

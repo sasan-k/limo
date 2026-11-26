@@ -16,7 +16,7 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/executor` — runs commands in a workspace via `mise exec` (subprocess)
 - `engine/limo/store` — SQLite; `fx` owns the `tickets` table (file)
 - `ui` — React SPA → `engine/limo/api` via REST + SSE
-All `engine/` and `ui/` paths are (planned).
+`hosts`, `runner`, `resolver`, `cost` and `ui` are (planned); see layout.md.
 
 ## Stack
 Python 3.12 · FastAPI · SQLite · Anthropic SDK · React + TypeScript + Vite + Tailwind + shadcn/ui · mise — details: stack.md

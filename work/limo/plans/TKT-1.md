@@ -3,8 +3,8 @@ ticket: TKT-1
 feature: limo
 scenarios: [SC-1, SC-2]
 scope: [api, persistence, agents, infra]
-revision: 0
-run: all
+revision: 2  # human-approved past the re-plan limit (verify r1)
+run: from-STEP-16
 read: [work/limo/map.yaml, work/limo/features/projects.feature, work/limo/features/agents.feature, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/adr/INDEX.md, context/layout.md, context/api.md, context/data.md, context/stack.md, ADR-1:L2, ADR-3:L2, ADR-4:L2, ADR-5:L2, ADR-7:L2, ADR-8:L2, ADR-9:L2, ADR-10:L2, .gitignore]
 ---
 # TKT-1: A user adds a project and sees the seven agents
@@ -55,7 +55,7 @@ read: [work/limo/map.yaml, work/limo/features/projects.feature, work/limo/featur
 ## Operation matrix
 | Op | happy | validation | not-found | conflict | invalid-state | idempotency | boundary | external-failure |
 |---|---|---|---|---|---|---|---|---|
-| OP-1 add project `POST /api/projects` | FT-1.1 | FT-1.2, FT-1.3, FT-1.4 | n/a: creates a new resource | FT-1.5 | n/a: no prior state to violate | n/a: a repeated add is a conflict (FT-1.5) | FT-1.6 | FT-1.7 |
+| OP-1 add project `POST /api/projects` | FT-1.1 | FT-1.2, FT-1.3, FT-1.4 | n/a: creates a new resource | FT-1.5 | n/a: no prior state to violate | n/a: a repeated add is a conflict (FT-1.5) | FT-1.6 | FT-1.7, FT-1.11 |
 | OP-2 list projects `GET /api/projects` | FT-1.1 | n/a: no parameters | n/a: list endpoint | n/a: read only | n/a: read only | n/a: read only | FT-1.8 | n/a: no external call |
 | OP-3 list agents `GET /api/agents` | FT-1.9 | n/a: no parameters | n/a: fixed list | n/a: read only | n/a: read only | n/a: read only | FT-1.10 | n/a: no external call |
 
@@ -69,12 +69,18 @@ read: [work/limo/map.yaml, work/limo/features/projects.feature, work/limo/featur
 | FT-1.5 | OP-1:conflict | `engine/tests/functional/test_projects.py` | project `shop` added | POST `shop` again | 409, `error.code` "project_exists"; GET lists one `shop` |
 | FT-1.6 | OP-1:boundary | `engine/tests/functional/test_projects.py` | bare repo | POST name of 40 × `a`; POST name of 41 × `a` | 201; 422 |
 | FT-1.7 | OP-1:external-failure | `engine/tests/functional/test_projects.py` | — | POST git_url `file://<tmp>/missing.git` | 502, `error.code` "clone_failed"; GET `[]`; `<data>/workspaces/shop` absent |
+| FT-1.11 | OP-1:external-failure | `engine/tests/functional/test_projects.py` | empty bare repo `empty.git` (`git init --bare`, no commits) | POST project `empty` with its file URL | 502, `error.code` "clone_failed"; GET `[]`; `<data>/workspaces/empty` absent |
 | FT-1.8 | OP-2:boundary | `engine/tests/functional/test_projects.py` | fresh app | GET `/api/projects` | 200 `[]` |
 | FT-1.9 | SC-2, OP-3:happy | `engine/tests/functional/test_agents.py` | real `skills/` dir (default settings) | GET `/api/agents` | names exactly `architecture, spec, plan, build, verify, close, resolver`; `plan.prompt` = `skills/plan/SKILL.md`; `skills/plan/templates/plan.md` in `plan.references` |
 | FT-1.10 | OP-3:boundary | `engine/tests/functional/test_agents.py` | tmp `skills/` with only `<name>/SKILL.md` for all 7 | GET `/api/agents` | 7 agents, every `references` is `[]` |
 
 ## Context pack
 - `.gitignore` — confirm `.venv/`, `.env`, `.factory/` already ignored (no edit)
+- `mise.toml` — STEP-15 adds the `fmt` task
+- files under `engine/limo/` and `engine/tests/` — STEP-15 and STEP-19 only, and only those a gate reports
+- `engine/pyproject.toml` — STEP-16
+- `engine/tests/functional/test_projects.py`, `engine/tests/builders.py` — STEP-17
+- `engine/limo/projects/service.py` — STEP-18
 - `context/INDEX.md` — Commands section only
 - all other files are created by the steps below
 
@@ -397,10 +403,36 @@ def app_from_env() -> FastAPI:
 ```
 - verify: `mise run test:engine` → 10 FT functions (13 test cases with parametrize) pass
 
-### STEP-15 quality gates
-- file: any file created above (edit only if a gate fails)
-- do: run `mise run gates`; fix only reported lines in files this plan created
-- verify: `mise run gates` → exit 0
+### STEP-15 format, then quality gates
+- file: `mise.toml` (edit); any file created above only if a gate still fails
+- do: add this task after `[tasks.lint]`, then run `mise run fmt`, then `mise run gates`; fix only reported lines in files this plan created, then run `mise run fmt` again
+```toml
+[tasks.fmt]
+description = "Auto-format and auto-fix (ruff)"
+dir = "engine"
+run = ["uv run ruff check --fix .", "uv run ruff format ."]
+```
+- verify: `mise run gates` → exit 0; `mise run test:engine` → 13 passed
+
+### STEP-16 pin the engine to Python 3.12
+- file: `engine/pyproject.toml` (edit)
+- do: change `requires-python = ">=3.12"` to `requires-python = ">=3.12,<3.13"`; run `mise run setup`
+- verify: `engine/.venv/bin/python --version` → `Python 3.12.x`
+
+### STEP-17 test: clone of an empty repo fails cleanly (test first)
+- file: `engine/tests/functional/test_projects.py` (edit), `engine/tests/builders.py` (edit)
+- do: in `builders.py` add `make_empty_bare_repo(root: Path, name: str) -> str` that runs `git init --bare <root>/<name>.git` (via `_git`, cwd=root) and returns its `as_uri()`. In `test_projects.py` add `test_ft_1_11_empty_repo_clone_fails` (docstring starts `"""FT-1.11 `) per the Functional tests table.
+- verify: `mise run test:engine -- -k ft_1_11` → FAIL: status 201 instead of 502
+
+### STEP-18 check `git rev-parse`
+- file: `engine/limo/projects/service.py` (edit)
+- do: in `add`, move the cleanup into a private method `_fail_clone(path: Path) -> ExternalError` that runs `shutil.rmtree(path, ignore_errors=True)` and returns `ExternalError("clone_failed", "could not clone the repository")`; use it for the two existing clone failures. Wrap the rev-parse call like the clone call (`ExecutorError` → `raise self._fail_clone(path) from e`); then if `branch.code != 0` or `branch.stdout.strip()` is empty → `raise self._fail_clone(path)`.
+- verify: `mise run test:engine -- -k ft_1_11` → passed
+
+### STEP-19 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created)
+- do: `mise run fmt`, then `mise run gates`, then `mise run test`
+- verify: gates exit 0; `mise run test` → 14 passed
 
 ## Do not
 - add UI code, SSE, auth, or any Claude API client
