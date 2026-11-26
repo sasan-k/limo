@@ -1,0 +1,89 @@
+# Ticket map — strict format, parsed by fx. Do not add other keys.
+# Status + tries are not here: they live in the engine DB (`fx status`, `fx set`).
+feature: limo
+tickets:
+  - id: TKT-1
+    title: A user adds a project and sees the seven agents
+    scope: [api, persistence, agents, infra]
+    scenarios: [SC-1, SC-2]
+    depends_on: []
+  - id: TKT-2
+    title: Agent runs get only their prompt, task and allowlisted tools
+    scope: [agents]
+    scenarios: [SC-3, SC-4, SC-5, SC-6, SC-7]
+    depends_on: [TKT-1]
+  - id: TKT-3
+    title: Each agent runs on its configured model
+    scope: [api, agents, persistence]
+    scenarios: [SC-8, SC-9]
+    depends_on: [TKT-2]
+  - id: TKT-4
+    title: Every run records tokens and cost with totals
+    scope: [cost, persistence, api]
+    scenarios: [SC-10, SC-11, SC-12, SC-13, SC-54]
+    depends_on: [TKT-2]
+  - id: TKT-5
+    title: The runner moves one ticket at a time through the stages
+    scope: [runner]
+    scenarios: [SC-14, SC-15, SC-16, SC-17, SC-18]
+    depends_on: [TKT-2]
+  - id: TKT-6
+    title: An intake form starts a feature locally; architecture and spec run before tickets
+    scope: [runner, api, host]
+    scenarios: [SC-19, SC-20, SC-21, SC-49, SC-59]
+    depends_on: [TKT-5, TKT-7]
+  - id: TKT-7
+    title: Each ticket ships as an auto-merge merge request and finishes on merge
+    scope: [host, runner]
+    scenarios: [SC-24, SC-25, SC-26, SC-27, SC-28, SC-29]
+    depends_on: [TKT-5]
+  - id: TKT-8
+    title: Tickets are mirrored to repo host issues
+    scope: [host]
+    scenarios: [SC-30, SC-31]
+    depends_on: [TKT-7]
+  - id: TKT-9
+    title: Stuck tickets get a resolver run whose allowlisted action is applied
+    scope: [runner, agents, host]
+    scenarios: [SC-32, SC-33, SC-34, SC-35, SC-36]
+    depends_on: [TKT-8]
+  - id: TKT-10
+    title: Escalations reach a human and replies come back
+    scope: [runner, host]
+    scenarios: [SC-37, SC-38, SC-39, SC-53]
+    depends_on: [TKT-9]
+  - id: TKT-11
+    title: Interrupted runs recover after a restart
+    scope: [runner, persistence]
+    scenarios: [SC-22, SC-23]
+    depends_on: [TKT-9]
+  - id: TKT-12
+    title: Live agent cards show model, state, ticket, cost and last run
+    scope: [ui, api]
+    scenarios: [SC-40, SC-41, SC-42]
+    depends_on: [TKT-4, TKT-9]
+  - id: TKT-13
+    title: Board and inbox show tickets and escalations
+    scope: [ui, api]
+    scenarios: [SC-43, SC-44]
+    depends_on: [TKT-10, TKT-12]
+  - id: TKT-14
+    title: Prompt editor saves versions and rolls back
+    scope: [ui, api, agents]
+    scenarios: [SC-46, SC-47, SC-48]
+    depends_on: [TKT-2, TKT-12]
+  - id: TKT-15
+    title: Cost view shows the four totals
+    scope: [ui, cost]
+    scenarios: [SC-45]
+    depends_on: [TKT-4, TKT-12]
+  - id: TKT-16
+    title: A runner switch in the UI turns the runner on and off, starting off
+    scope: [runner, api, ui]
+    scenarios: [SC-50, SC-51, SC-52]
+    depends_on: [TKT-5, TKT-12]
+  - id: TKT-17
+    title: Ticket and agent budgets stop work and can be raised
+    scope: [cost, runner, api]
+    scenarios: [SC-55, SC-56, SC-57, SC-58]
+    depends_on: [TKT-4, TKT-5]

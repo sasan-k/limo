@@ -151,6 +151,9 @@ An FT covers `SC-n` and/or `OP-n:<category>`.
 - **Merge = approval only:** the factory never merges on its own. Runner enables the host's "merge when approved + pipeline succeeds"; a ticket is `done` only once its MR is merged; dependents branch from the merged code.
 - **Review status:** Close sets `review` (docs ship in the same MR/PR); runner sets `done` on merge. Changes requested → runner writes `reports/TKT-n-review-<k>.md`, ticket → `todo`; Plan decides: **fix pass** if every comment fits context-pack files with no contract/data/matrix change (appends `## Fix <k>`, `run: fix-<k>`, build_tries=0) else **re-plan** (plan_tries +1). Dependents wait; others continue.
 - **Cost:** every agent run logs tokens (input, output, cache read/write) × a configurable price table → $. Totals per agent, per ticket, per agent×ticket, overall. Agent cards show the $ of the current ticket for that agent.
+- **Runner switch:** UI button turns the runner on/off; starts off. Features start from a UI intake form. `work/<feature>/` (requirements, spec output, plans, reports) stays local in the workspace (`.git/info/exclude`), never committed; only code + `context/` ship in merge requests. Turning off lets the active run finish.
+- **Budgets:** every ticket and every agent (per ticket) has a USD budget from configurable defaults. Reaching one stops work on the ticket and lists it in the inbox (no resolver); the user raises it and presses Continue.
+- **Inbox Continue:** on an escalated ticket the user can type a response in Limo; it is posted on the issue and the resolver runs (not counted toward the limit). Issues carry status label `limo:<status>`.
 - **Human only when really needed:** escalation = issue label `factory:needs-human` + diagnosis comment; runner continues other ready tickets.
 
 ## Build order

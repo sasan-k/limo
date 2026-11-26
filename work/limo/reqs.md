@@ -1,0 +1,57 @@
+# Requirements Index — limo
+<!-- One atomic requirement per line. IDs are permanent: never renumber; retire with [removed]. -->
+<!-- Kind: F = functional (→ scenarios) | N = non-functional (→ nfr.md) | Q = unclear (→ questions.md) -->
+
+- REQ-1 [N] A fresh clone runs with `mise install && mise run setup && mise run up`: pinned python, uv, node; engine + UI on localhost — src: `requirements/limo.md#setup-and-run`
+- REQ-2 [N] `mise run` lists every task — src: `requirements/limo.md#setup-and-run`
+- REQ-3 [N] Anthropic API key and repo host token come from config; secrets are never committed — src: `requirements/limo.md#setup-and-run`
+- REQ-4 [F] The price table is configurable — src: `requirements/limo.md#setup-and-run`
+- REQ-5 [F] The model of each agent is configurable — src: `requirements/limo.md#agents`
+- REQ-6 [F] A user adds a project by git URL and Limo clones it into a workspace — src: `requirements/limo.md#setup-and-run`
+- REQ-7 [F] Limo has seven agents (architecture, spec, plan, build, verify, close, resolver), each a prompt + reference files — src: `requirements/limo.md#agents`
+- REQ-8 [F] A run's context is only the agent's prompt, the task, and the agent's tools — src: `requirements/limo.md#agents`
+- REQ-9 [N] The agent loop runs in the engine on the Claude Messages API — src: `requirements/limo.md#agents`
+- REQ-10 [F] Limo rejects any tool call outside the agent's allowlist — src: `requirements/limo.md#agents`
+- REQ-11 [F] Build can read only the files in its plan's context pack — src: `requirements/limo.md#agents`
+- REQ-12 [F] Resolver gets only read tools and host-query — src: `requirements/limo.md#agents`
+- REQ-13 [N] Commands run through the executor, in a workspace via `mise exec` — src: `requirements/limo.md#agents`
+- REQ-14 [F] The runner dispatches by ticket status: todo with deps done → plan, planned → build, built → verify, verified → close, review → wait — src: `requirements/limo.md#runner-and-scheduler`
+- REQ-15 [F] Before tickets the runner runs architecture init if `context/` is missing, then spec, map-check, and architecture nfr if NFRs exist — src: `requirements/limo.md#runner-and-scheduler`
+- REQ-16 [F] One ticket runs at a time; each stage is a fresh run — src: `requirements/limo.md#runner-and-scheduler`
+- REQ-17 [N] Ticket status and tries live in SQLite via `fx` — src: `requirements/limo.md#runner-and-scheduler`
+- REQ-18 [F] On start, `running` runs become `interrupted`, the workspace is reset to the ticket branch's last commit, and the stage is retried within limits — src: `requirements/limo.md#runner-and-scheduler`
+- REQ-19 [F] A ticket is stuck when blocked, a stage ends with no status change, a run crashes or times out, retry limits are hit, or a question blocks it — src: `requirements/limo.md#runner-and-scheduler`
+- REQ-20 [F] Waits (approval, CI, human replies) are polled on the repo host at a configurable interval — src: `requirements/limo.md#runner-and-scheduler`
+- REQ-21 [N] The scheduler sits behind an interface so a durable engine can replace it — src: `requirements/limo.md#runner-and-scheduler`
+- REQ-22 [F] A stuck ticket opens an incident: the runner writes the bundle and runs the resolver, which returns one action — src: `requirements/limo.md#resolver`
+- REQ-23 [F] The runner validates the action against the allowlist (retry, answer, edit-ticket, escalate) and applies it — src: `requirements/limo.md#resolver`
+- REQ-24 [F] After 2 resolves on a ticket, the next incident escalates — src: `requirements/limo.md#resolver`
+- REQ-25 [F] Escalation labels the issue `factory:needs-human`, comments the diagnosis, and the runner continues other ready tickets — src: `requirements/limo.md#resolver`
+- REQ-26 [N] Repo host adapters exist for GitLab and GitHub — src: `requirements/limo.md#repo-host`
+- REQ-27 [F] Each ticket mirrors to an issue whose status stays in sync — src: `requirements/limo.md#repo-host`
+- REQ-28 [F] Human replies on the issue reach the resolver — src: `requirements/limo.md#repo-host`
+- REQ-29 [F] Each ticket gets its own branch and merge request; close output ships in the same merge request — src: `requirements/limo.md#repo-host`
+- REQ-30 [F] Limo never merges; it enables merge-when-approved-and-pipeline-succeeds — src: `requirements/limo.md#repo-host`
+- REQ-31 [F] A ticket becomes `done` when its merge request is merged — src: `requirements/limo.md#repo-host`
+- REQ-32 [F] Dependent tickets branch from the merged code — src: `requirements/limo.md#repo-host`
+- REQ-33 [F] Changes requested → review comments saved to a review report → ticket back to plan — src: `requirements/limo.md#repo-host`
+- REQ-34 [F] Every run logs input, output, cache read and cache write tokens and the model — src: `requirements/limo.md#cost`
+- REQ-35 [F] Cost = tokens × price table — src: `requirements/limo.md#cost`
+- REQ-36 [F] Cost totals per agent, per ticket, per agent×ticket, and overall — src: `requirements/limo.md#cost`
+- REQ-37 [N] The UI uses shadcn/ui with a custom color theme in dark and light modes (Q-1) — src: `requirements/limo.md#ui`
+- REQ-38 [N] The UI updates live without reload — src: `requirements/limo.md#ui`
+- REQ-39 [F] One agent card per agent: name, model, state, current ticket, $ of this agent on the current ticket, last run (tokens, time, tries) — src: `requirements/limo.md#ui`
+- REQ-40 [F] A board shows tickets by status with dependencies — src: `requirements/limo.md#ui`
+- REQ-41 [F] An inbox lists escalated tickets — src: `requirements/limo.md#ui`
+- REQ-42 [F] The prompt editor views and edits each agent's prompt and reference files — src: `requirements/limo.md#ui`
+- REQ-43 [F] Every prompt save is a git version that can be rolled back — src: `requirements/limo.md#ui`
+- REQ-44 [F] A cost view shows the four totals — src: `requirements/limo.md#ui`
+- REQ-45 [F] A user starts a feature by pasting its requirements into an intake form; Limo saves them in the project's workspace under `work/<feature>/requirements/` — src: `questions.md#Q-2`
+- REQ-46 [F] A UI button turns the runner on and off; the runner starts off — src: `questions.md#Q-3`
+- REQ-47 [N] One ticket runs at a time now; the design scales to more concurrent tickets later — src: `questions.md#Q-4`
+- REQ-48 [F] On an escalated ticket the user types a response in the inbox and presses Continue; the response is posted on the issue and the resolver runs without counting toward the limit — src: `questions.md#Q-6`
+- REQ-49 [F] Every ticket and every agent has a budget in USD, set from configurable defaults — src: user 2026-11-26
+- REQ-50 [F] When a budget is reached, work on that ticket stops and it appears in the inbox; the resolver does not run — src: user 2026-11-26
+- REQ-51 [F] The user can raise a reached budget and continue — src: user 2026-11-26
+- REQ-52 [F] A price change applies only to new usage; past costs never change — src: `questions.md#Q-7`
+- REQ-53 [F] `work/<feature>/` stays local to Limo: never committed or pushed, and never part of a merge request — src: `questions.md#Q-10`

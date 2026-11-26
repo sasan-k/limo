@@ -99,7 +99,7 @@ stateDiagram-v2
 flowchart LR
     subgraph APP["factory repo = the app (clone and run)"]
         AG[agents/&lt;name&gt;/prompt.md<br/>+ refs/ templates]
-        UI[ui/<br/>agent cards · ticket board<br/>prompt editor · needs-human inbox]
+        UI[ui/<br/>agent cards · ticket board · runner switch<br/>intake form · prompt editor<br/>inbox: escalations + budgets · cost]
         subgraph ENG["engine/ (Python)"]
             RUN[Runner<br/>dispatch by status · stuck guard]
             RT[Agent runtime<br/>Messages API loop]
