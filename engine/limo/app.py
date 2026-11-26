@@ -4,9 +4,11 @@ from dataclasses import dataclass
 
 from fastapi import FastAPI
 
+from limo.agents.agent_service import AgentService
 from limo.agents.registry import AgentRegistry
 from limo.agents.repo import RunRepo
 from limo.agents.service import RunConfig, RunService, RunStores
+from limo.agents.settings_repo import AgentSettingsRepo
 from limo.agents.tools import ToolBox
 from limo.api.agents_routes import agents_router
 from limo.api.errors import install_error_handlers
@@ -35,8 +37,9 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     projects = ProjectService(
         ProjectRepo(settings.db_path), deps.executor, settings.workspaces_dir, settings.command_timeout_s
     )
+    agent_settings = AgentSettingsRepo(settings.db_path)
     runs = RunService(
-        RunStores(RunRepo(settings.db_path), ProjectRepo(settings.db_path)),
+        RunStores(RunRepo(settings.db_path), ProjectRepo(settings.db_path), agent_settings),
         deps.llm,
         ToolBox(deps.executor, settings.command_timeout_s),
         RunConfig(settings.skills_dir, settings.default_model, settings.max_turns),
@@ -52,7 +55,11 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     )
     install_error_handlers(app)
     app.include_router(projects_router(projects))
-    app.include_router(agents_router(AgentRegistry(settings.skills_dir)))
+    app.include_router(
+        agents_router(
+            AgentService(AgentRegistry(settings.skills_dir), agent_settings, settings.default_model)
+        )
+    )
     app.include_router(runs_router(runs))
     return app
 
