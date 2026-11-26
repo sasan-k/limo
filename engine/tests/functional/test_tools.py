@@ -1,0 +1,92 @@
+from pathlib import Path
+from typing import Any
+
+from fastapi.testclient import TestClient
+
+from tests.builders import add_cart_project, start_and_wait
+from tests.fakes.llm import FakeLlm, tool_use
+
+
+def _first_tool_result(llm: FakeLlm) -> dict[str, Any]:
+    return llm.requests[1].messages[-1]["content"][0]
+
+
+def test_ft_2_2_disallowed_tool_is_rejected_and_recorded(
+    client: TestClient, llm: FakeLlm, tmp_path: Path
+) -> None:
+    """FT-2.2 verify calling write_file gets a rejected tool_result and a rejected tool call row."""
+    add_cart_project(client, tmp_path)
+    llm.script = [tool_use("write_file", {"path": "x.txt", "content": "y"})]
+    run = start_and_wait(client, "verify")
+    assert run["status"] == "succeeded"
+    result = _first_tool_result(llm)
+    assert result["is_error"] is True
+    assert result["content"] == "tool not allowed: write_file"
+    calls = client.get(f"/api/runs/{run['id']}/tool-calls").json()
+    assert [(c["seq"], c["name"], c["status"]) for c in calls] == [(1, "write_file", "rejected")]
+
+
+def test_ft_2_3_build_reads_file_in_context_pack(client: TestClient, llm: FakeLlm, tmp_path: Path) -> None:
+    """FT-2.3 build reading src/cart.py (in the context pack) gets its content."""
+    add_cart_project(client, tmp_path)
+    llm.script = [tool_use("read_file", {"path": "src/cart.py"})]
+    start_and_wait(client, "build")
+    result = _first_tool_result(llm)
+    assert result["content"] == "def total() -> int:\n    return 0\n"
+    assert result["is_error"] is False
+
+
+def test_ft_2_4_build_cannot_read_file_outside_context_pack(
+    client: TestClient, llm: FakeLlm, tmp_path: Path
+) -> None:
+    """FT-2.4 build reading src/payment.py (not in the context pack) is rejected."""
+    add_cart_project(client, tmp_path)
+    llm.script = [tool_use("read_file", {"path": "src/payment.py"})]
+    run = start_and_wait(client, "build")
+    result = _first_tool_result(llm)
+    assert result["is_error"] is True
+    assert result["content"] == "not in context pack: src/payment.py"
+    calls = client.get(f"/api/runs/{run['id']}/tool-calls").json()
+    assert calls[0]["status"] == "rejected"
+
+
+def test_ft_2_10_path_escape_is_rejected(client: TestClient, llm: FakeLlm, tmp_path: Path) -> None:
+    """FT-2.10 read_file with a path leaving the workspace is rejected."""
+    add_cart_project(client, tmp_path)
+    llm.script = [tool_use("read_file", {"path": "../outside.txt"})]
+    start_and_wait(client, "plan")
+    result = _first_tool_result(llm)
+    assert result["is_error"] is True
+    assert result["content"] == "path outside workspace: ../outside.txt"
+
+
+def test_ft_2_11_missing_file_is_an_error(client: TestClient, llm: FakeLlm, tmp_path: Path) -> None:
+    """FT-2.11 read_file of a missing file gives an error tool_result and an error tool call."""
+    add_cart_project(client, tmp_path)
+    llm.script = [tool_use("read_file", {"path": "src/nope.py"})]
+    run = start_and_wait(client, "plan")
+    result = _first_tool_result(llm)
+    assert result["is_error"] is True
+    assert result["content"] == "file not found: src/nope.py"
+    calls = client.get(f"/api/runs/{run['id']}/tool-calls").json()
+    assert calls[0]["status"] == "error"
+
+
+def test_ft_2_12_invalid_tool_input_is_an_error(client: TestClient, llm: FakeLlm, tmp_path: Path) -> None:
+    """FT-2.12 read_file without its required path gives invalid input."""
+    add_cart_project(client, tmp_path)
+    llm.script = [tool_use("read_file", {})]
+    start_and_wait(client, "plan")
+    result = _first_tool_result(llm)
+    assert result["is_error"] is True
+    assert result["content"].startswith("invalid input:")
+
+
+def test_ft_2_13_failing_command_is_an_error(client: TestClient, llm: FakeLlm, tmp_path: Path) -> None:
+    """FT-2.13 run_command exiting non-zero gives an error tool_result with the exit code."""
+    add_cart_project(client, tmp_path)
+    llm.script = [tool_use("run_command", {"argv": ["false"]})]
+    start_and_wait(client, "build")
+    result = _first_tool_result(llm)
+    assert result["is_error"] is True
+    assert result["content"].startswith("command failed (exit 1)")

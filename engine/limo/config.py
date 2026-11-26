@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -11,6 +12,11 @@ class Settings(BaseSettings):
     data_dir: Path = REPO_ROOT / ".factory"
     skills_dir: Path = REPO_ROOT / "skills"
     command_timeout_s: float = 600.0
+    anthropic_api_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY", "anthropic_api_key")
+    )
+    default_model: str = "claude-opus-5-5"
+    max_turns: int = 50
 
     @property
     def db_path(self) -> Path:

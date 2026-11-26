@@ -4,16 +4,23 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from limo.app import create_app
+from limo.app import Deps, create_app
 from limo.config import Settings
+from limo.executor.local import LocalExecutor
+from tests.fakes.llm import FakeLlm
+
+
+@pytest.fixture
+def llm() -> FakeLlm:
+    return FakeLlm()
 
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    return Settings(data_dir=tmp_path / "data", _env_file=None)
+    return Settings(data_dir=tmp_path / "data", anthropic_api_key="sk-canary-123", _env_file=None)
 
 
 @pytest.fixture
-def client(settings: Settings) -> Iterator[TestClient]:
-    with TestClient(create_app(settings)) as c:
+def client(settings: Settings, llm: FakeLlm) -> Iterator[TestClient]:
+    with TestClient(create_app(settings, Deps(executor=LocalExecutor(), llm=llm))) as c:
         yield c
