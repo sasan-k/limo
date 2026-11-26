@@ -3,8 +3,8 @@ ticket: TKT-3
 feature: limo
 scenarios: [SC-8, SC-9]
 scope: [api, agents, persistence]
-revision: 0
-run: all
+revision: 1
+run: from-STEP-9
 read: [work/limo/map.yaml, work/limo/features/settings.feature, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/api.md, context/data.md, context/layout.md, context/adr/INDEX.md, ADR-3:L2, ADR-4:L2, ADR-6:L2, engine/limo/agents/service.py, engine/limo/agents/models.py, engine/limo/api/agents_routes.py, engine/limo/app.py, engine/limo/store/migrations/]
 ---
 # TKT-3: Each agent runs on its configured model
@@ -71,6 +71,7 @@ read: [work/limo/map.yaml, work/limo/features/settings.feature, context/INDEX.md
 - `engine/limo/common/constants.py` — read
 - `engine/limo/store/db.py` — read (`connect`)
 - `engine/tests/conftest.py`, `engine/tests/builders.py`, `engine/tests/fakes/llm.py` — read (fixtures, helpers)
+- `engine/tests/functional/test_agent_settings.py` — STEP-9 edit
 
 ## Steps
 ### STEP-1 tests (test first)
@@ -117,6 +118,16 @@ CREATE TABLE agent_settings (
 - verify: `mise run test:engine` → all pass (28 earlier + 7 new = 35)
 
 ### STEP-8 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` → 35 passed
+
+### STEP-9 error assertions read the error envelope (revision 1: verify r0)
+- file: `engine/tests/functional/test_agent_settings.py` (edit)
+- do: replace every `r.json()["code"]` with `r.json()["error"]["code"]` (FT-3.3 and FT-3.4); change nothing else
+- verify: `mise run test:engine` → 35 passed
+
+### STEP-10 format, gates, full suite
 - file: none new (edit only lines a gate reports, in files this plan created or edited)
 - do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
 - verify: gates exit 0; `mise run test` → 35 passed

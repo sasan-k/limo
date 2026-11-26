@@ -7,6 +7,13 @@ class Agent(BaseModel):
     name: str
     prompt: str
     references: list[str]
+    model: str | None = None
+
+
+class ModelIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model: str = Field(pattern=r"^[a-z0-9][a-z0-9.-]{0,63}$")
 
 
 class RunIn(BaseModel):

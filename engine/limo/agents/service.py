@@ -8,6 +8,7 @@ from uuid import uuid4
 from limo.agents.context_pack import parse_context_pack
 from limo.agents.models import Run, RunIn, ToolCall
 from limo.agents.repo import RunRepo
+from limo.agents.settings_repo import AgentSettingsRepo
 from limo.agents.tools import ToolBox, ToolContext, ToolOutcome
 from limo.common.errors import NotFound
 from limo.llm.ports import LlmClient, LlmError, LlmRequest
@@ -18,6 +19,7 @@ from limo.projects.repo import ProjectRepo
 class RunStores:
     runs: RunRepo
     projects: ProjectRepo
+    agent_settings: AgentSettingsRepo
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,7 @@ class RunService:
         project = self._stores.projects.get_by_name(project_name)
         if project is None:
             raise NotFound("project_not_found", f"project {project_name} not found")
+        model = self._stores.agent_settings.get(data.agent) or self._config.model
         run = Run(
             id=uuid4().hex,
             project=project_name,
@@ -49,7 +52,7 @@ class RunService:
             feature=data.feature,
             ticket=data.ticket,
             status="queued",
-            model=self._config.model,
+            model=model,
             output=None,
             error=None,
             created_at=datetime.now(UTC).isoformat(),

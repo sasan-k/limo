@@ -31,4 +31,5 @@
 - `tool_calls` — run_id, seq, name, target, status (ok|error|rejected), summary, created_at — `002_runs.sql`
 - `incidents` — stuck event, resolver report path, applied action
 - `prices` — per model: $/MTok for input, output, cache read, cache write (editable)
-- `settings` — model per agent, caps, polling interval
+- `agent_settings` — agent (PK), model, updated_at — `003_agent_settings.sql`
+- `settings` — caps, polling interval (planned)

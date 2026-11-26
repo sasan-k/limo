@@ -35,6 +35,7 @@ Review (`work/<feature>/reports/TKT-n-review-<k>.md` newer than the plan):
 - Operation matrix: one row per operation the ticket adds or changes; every category cell filled.
 - Every applicable Quality item that is testable (authz, validation, limits) has a matrix cell test.
 - Functional tests: follow testing.md; each scenario and non-n/a cell covered; name contains FT id.
+- Test steps spell out how to read each result (exact JSON paths, e.g. the error envelope).
 
 ## Rules — steps
 - Context pack: every file a step edits or imitates (line ranges for imitated). Nothing else.
