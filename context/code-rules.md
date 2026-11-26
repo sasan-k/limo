@@ -3,7 +3,7 @@
 
 ## Paradigm
 - Ports & adapters: services depend on Protocols in `ports.py`; adapters implement them (ADR-4)
-- Constructor injection; all wiring in `engine/factory/app.py`; no module-level singletons or globals
+- Constructor injection; all wiring in `engine/limo/app.py`; no module-level singletons or globals
 - UI: function components + hooks; server state only via react-query; no global store
 
 ## Structure (SOLID as project rules)
@@ -14,9 +14,9 @@
 - LSP: adapters raise only the port's declared errors (`HostError`, `ExecutorError`, `LlmError`)
 
 ## Reuse (DRY)
-- shared helpers: `engine/factory/common/`, `ui/src/lib/` — search there first
+- shared helpers: `engine/limo/common/`, `ui/src/lib/` — search there first
 - extract on the 3rd duplication; no speculative abstractions
-- one source for status names, agent names, event types: `engine/factory/common/constants.py`; UI uses generated types
+- one source for status names, agent names, event types: `engine/limo/common/constants.py`; UI uses generated types
 - ticket state goes through `fx` (scripts/fx.py) functions; never duplicate its SQL
 
 ## Size & complexity

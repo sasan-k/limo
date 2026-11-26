@@ -13,7 +13,7 @@ DESIGN.md requires swappable hosts, executors and schedulers, and tests need fak
 
 ## Rules
 - MUST define a Protocol before a second implementation or any external call
-- MUST wire dependencies only in `engine/factory/app.py`
+- MUST wire dependencies only in `engine/limo/app.py`
 - MUST NOT import adapters or vendor SDKs from service code (import-linter contract)
 
 <!-- ===== L3 ===== -->

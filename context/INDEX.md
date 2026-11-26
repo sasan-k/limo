@@ -1,21 +1,21 @@
-# Factory Console — Context Index
+# Limo — Context Index
 <!-- Always read. Keep ≤ 60 lines. Facts live in the linked files, not here. -->
 
 ## System
-Standalone local app that runs the factory agents (architecture, spec, plan, build, verify, close, resolver)
+Limo: standalone local app that runs the factory agents (architecture, spec, plan, build, verify, close, resolver)
 end to end on a target project and shows them live. Single user on localhost.
 Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (`scripts/fx.py`).
 
 ## Shape
-- `skills/` — agent prompts + reference templates → loaded by `engine/factory/agents` (file read)
-- `engine/factory/api` — REST + SSE → calls `runner`, `agents`, `store`, `cost` (call)
-- `engine/factory/runner` — dispatch by ticket status, stuck guard, scheduler → `agents`, `resolver`, `hosts`, `store` (call)
-- `engine/factory/agents` — prompt registry + Messages API loop + per-agent tools → Claude API (HTTPS), `executor` (call)
-- `engine/factory/resolver` — incident bundle, action validation/apply → `agents`, `store`, `hosts` (call)
-- `engine/factory/hosts` — RepoHost port; GitLab + GitHub adapters → host REST APIs (HTTPS)
-- `engine/factory/executor` — runs commands in a workspace via `mise exec` (subprocess)
-- `engine/factory/store` — SQLite; `fx` owns the `tickets` table (file)
-- `ui` — React SPA → `engine/factory/api` via REST + SSE
+- `skills/` — agent prompts + reference templates → loaded by `engine/limo/agents` (file read)
+- `engine/limo/api` — REST + SSE → calls `runner`, `agents`, `store`, `cost` (call)
+- `engine/limo/runner` — dispatch by ticket status, stuck guard, scheduler → `agents`, `resolver`, `hosts`, `store` (call)
+- `engine/limo/agents` — prompt registry + Messages API loop + per-agent tools → Claude API (HTTPS), `executor` (call)
+- `engine/limo/resolver` — incident bundle, action validation/apply → `agents`, `store`, `hosts` (call)
+- `engine/limo/hosts` — RepoHost port; GitLab + GitHub adapters → host REST APIs (HTTPS)
+- `engine/limo/executor` — runs commands in a workspace via `mise exec` (subprocess)
+- `engine/limo/store` — SQLite; `fx` owns the `tickets` table (file)
+- `ui` — React SPA → `engine/limo/api` via REST + SSE
 All `engine/` and `ui/` paths are (planned).
 
 ## Stack

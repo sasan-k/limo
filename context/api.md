@@ -32,4 +32,4 @@
 
 ## Reference implementations
 - endpoint: (planned) first endpoint ticket
-- SSE: (planned) `engine/factory/api/events.py`
+- SSE: (planned) `engine/limo/api/events.py`

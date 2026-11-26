@@ -138,7 +138,7 @@ An FT covers `SC-n` and/or `OP-n:<category>`.
 | Close | done · abandoned |
 
 ## Orchestration (in progress)
-- **Console = standalone app** (this repo). It hosts the agent prompts (today's skills) and builds each agent's whole context itself: its prompt + the task + its own tools. Nothing from `~/.claude`, CLAUDE.md, memory or other skills. Prompts link reference files (templates) by relative path.
+- **Limo = standalone app** (this repo). It hosts the agent prompts (today's skills) and builds each agent's whole context itself: its prompt + the task + its own tools. Nothing from `~/.claude`, CLAUDE.md, memory or other skills. Prompts link reference files (templates) by relative path.
 - **Full solution, one repo:** anyone can clone it and run end to end (setup → add project → pipeline → MRs/PRs). Repo hosts via adapters (GitLab, GitHub).
 - **Run locally, set up with mise:** `mise.toml` pins the app's tools (python, uv, node) and defines tasks (`mise run setup`, `mise run up`). Agents run commands on the host through an `Executor` interface (v1: local); in a target workspace they run via `mise exec`, so a project's own `mise.toml` installs its tools.
 - **Agent loop = Messages API, self-hosted:** the Python engine runs each agent's loop with the Anthropic SDK and app-defined tools; per-agent tool allowlists enforce role limits (e.g. Build can read only its context pack).
@@ -158,4 +158,4 @@ An FT covers `SC-n` and/or `OP-n:<category>`.
 2. ✅ Skills, in pipeline order
 3. ✅ Scripts
 4. ✅ Orchestration design (above) + resolver prompt + fix pass
-5. Console app, built by the factory itself (`work/console/`) — doubles as the dry run
+5. Limo app, built by the factory itself (`work/limo/`) — doubles as the dry run

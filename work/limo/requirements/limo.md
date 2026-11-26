@@ -1,9 +1,9 @@
-# Factory Console — requirements (input to /factory-spec console)
+# Limo — requirements (input to /factory-spec limo)
 
 Source of decisions: DESIGN.md "Orchestration (in progress)". This file states what the app must do.
 
 ## Product
-A standalone app in this repo that runs the factory agents end to end on a target project. Anyone can clone it and run it.
+Limo: a standalone app in this repo that runs the factory agents end to end on a target project. Anyone can clone it and run it.
 
 ## Setup and run
 - `mise install && mise run setup && mise run up` installs pinned tools (python, uv, node) and starts engine + UI on localhost.

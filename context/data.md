@@ -16,7 +16,7 @@
 
 ## Migrations
 - tool: plain SQL files applied in order at startup; version in `schema_version` table
-- location: `engine/factory/store/migrations/NNN_<name>.sql` (planned)
+- location: `engine/limo/store/migrations/NNN_<name>.sql` (planned)
 - rules: forward-only; additive changes only without an ADR
 - `tickets` table schema is owned by `scripts/fx.py` (CREATE IF NOT EXISTS); migrations never alter it
 

@@ -5,7 +5,7 @@
 ```
 skills/<agent>/SKILL.md + templates/   # agent prompts + reference files (edited from the UI)
 scripts/fx.py                          # ticket state + checks CLI (stdlib only)
-engine/                                # (planned) Python package `factory`, pyproject.toml, uv.lock
+engine/                                # (planned) Python package `limo`, pyproject.toml, uv.lock
   factory/{api,runner,agents,resolver,hosts,executor,store,cost}/
   factory/app.py  factory/config.py
   tests/functional/  tests/fakes/  tests/unit/
@@ -15,7 +15,7 @@ context/  work/                        # factory artifacts for this app (it is i
 mise.toml  .env.example                # (planned) tools, tasks, config template
 ```
 
-## Module anatomy (engine/factory/<module>/)
+## Module anatomy (engine/limo/<module>/)
 - `ports.py` — Protocols the module depends on or exposes (only where an adapter exists)
 - `service.py` — use cases; pure logic + calls to ports
 - `<adapter>.py` — implementations (e.g. `hosts/gitlab.py`, `executor/local.py`)
@@ -25,20 +25,20 @@ mise.toml  .env.example                # (planned) tools, tasks, config template
 ## Where to put new things
 | Adding a… | Goes in | Copy the pattern from |
 |---|---|---|
-| endpoint | `engine/factory/api/<area>_routes.py` | first endpoint ticket's file (planned) |
-| SSE event type | `engine/factory/api/events.py` | (planned) |
-| domain logic | `engine/factory/<module>/service.py` | (planned) |
-| port + adapter | `engine/factory/<module>/ports.py` + `<adapter>.py` | `hosts/` (planned) |
-| agent tool | `engine/factory/agents/tools/<tool>.py` | (planned) |
-| table / migration | `engine/factory/store/migrations/NNN_<name>.sql` | (planned) |
+| endpoint | `engine/limo/api/<area>_routes.py` | first endpoint ticket's file (planned) |
+| SSE event type | `engine/limo/api/events.py` | (planned) |
+| domain logic | `engine/limo/<module>/service.py` | (planned) |
+| port + adapter | `engine/limo/<module>/ports.py` + `<adapter>.py` | `hosts/` (planned) |
+| agent tool | `engine/limo/agents/tools/<tool>.py` | (planned) |
+| table / migration | `engine/limo/store/migrations/NNN_<name>.sql` | (planned) |
 | functional test | `engine/tests/functional/test_<area>.py` | (planned) |
 | fake | `engine/tests/fakes/<system>.py` | (planned) |
 | UI page | `ui/src/pages/<Page>.tsx` | (planned) |
 | UI component | `ui/src/components/<Name>.tsx` | shadcn/ui generated components |
 
 ## Wiring
-- `engine/factory/app.py` (planned) — app factory `create_app(settings, deps)`: builds adapters, injects into services, mounts routers
-- `engine/factory/agents/registry.py` (planned) — agent → prompt path, model, tool allowlist
+- `engine/limo/app.py` (planned) — app factory `create_app(settings, deps)`: builds adapters, injects into services, mounts routers
+- `engine/limo/agents/registry.py` (planned) — agent → prompt path, model, tool allowlist
 - `ui/src/main.tsx` (planned) — router + query client
 
 ## Do not touch

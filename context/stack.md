@@ -33,5 +33,5 @@
 
 ## Environments
 - local only: `mise run up` → engine on 127.0.0.1:8700, ui on 127.0.0.1:5173 (dev) or served by engine (build)
-- config: `.env` (gitignored; template `.env.example`, planned) loaded by mise; settings model `engine/factory/config.py` (planned)
+- config: `.env` (gitignored; template `.env.example`, planned) loaded by mise; settings model `engine/limo/config.py` (planned)
 - app data dir: `.factory/` (gitignored): `state.db`, `workspaces/<project>/`
