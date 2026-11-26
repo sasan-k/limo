@@ -20,7 +20,8 @@ Follow the plan exactly. You do not design, explore, or improve.
   `<rev>` = plan `revision`; `<try>` = `build_tries` from `fx status work/<feature> TKT-n` + 1
 
 ## Steps
-Run the steps the plan's `run:` names — `all`: every STEP under Steps; `fix-<k>`: only the steps under `## Fix <k>`.
+Run the steps the plan's `run:` names — `all`: every STEP under Steps; `from-STEP-<n>`: STEP-n and the ones after it
+(earlier steps already passed; trust their files); `fix-<k>`: only the steps under `## Fix <k>`.
 For each of those steps in order:
 1. Do exactly what `do:` says in `file:`. Use names, types and snippets as written;
    change a snippet only where the step says to.

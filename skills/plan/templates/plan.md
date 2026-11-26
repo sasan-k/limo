@@ -4,7 +4,7 @@ feature: <feature>
 scenarios: [SC-<n>, …]
 scope: [<tags>]
 revision: <0 = first plan; n = after nth escalation>
-run: <all | fix-<k>>  # which steps Build runs
+run: <all | from-STEP-<n> | fix-<k>>  # which steps Build runs
 read: [<every file read while planning, e.g. context/api.md, ADR-4:L2, src/orders/OrderService.ts:10-60>]
 ---
 # TKT-<n>: <title>

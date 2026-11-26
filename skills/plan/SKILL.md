@@ -15,6 +15,7 @@ You are the only stage that designs. Build follows your plan literally and reads
 5. Plans of `depends_on` tickets — Design section only
 6. Code: reference files from layout.md first; grep + line ranges; ≤ 15 code files
 Revision (plan exists): read latest `work/<feature>/reports/TKT-n-verify-*.md`; change only what it requires; `revision` +1.
+  Steps before the first changed step passed and are untouched → set `run: from-STEP-n` (n = first changed step); else `run: all`.
 Review (`work/<feature>/reports/TKT-n-review-<k>.md` newer than the plan):
 - **Fix pass** if every comment can be met by editing files already in the Context pack, with no change to
   Design contracts/data or the operation matrix → append `## Fix <k>` (template), set `run: fix-<k>`.
