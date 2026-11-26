@@ -79,3 +79,9 @@
 - blocks: none (ADR-12 stays proposed until answered; adapters can be built either way)
 - options: recorded HTTP in every run, re-recorded on demand from sandbox repos · live sandbox repos in CI (needs tokens)
 - answer:
+
+## Q-14 [open] GitHub/GitLab do not let you approve your own merge request. Which identity opens Limo's merge requests?
+- from: REQ-30 · raised by: human (TKT-1 review, 2026-11-26)
+- blocks: TKT-7
+- options: separate identity (GitHub App / bot account) so the human approves and auto-merge runs · solo mode: the human merging counts as approval, no auto-merge
+- answer:
