@@ -74,7 +74,7 @@
 - options: per agent per ticket · total per agent across the feature
 - answer: Per agent per ticket.
 
-## Q-13 [open] Test the GitLab and GitHub adapters against recorded HTTP fixtures, or against live sandbox repos?
+## Q-13 [open] (deferred by user 2026-11-26 — revisit when planning the first repo-host ticket, TKT-7) Test the GitLab and GitHub adapters against recorded HTTP fixtures, or against live sandbox repos?
 - from: NFR-8 (ADR-12 proposed) · raised by: architecture
 - blocks: none (ADR-12 stays proposed until answered; adapters can be built either way)
 - options: recorded HTTP in every run, re-recorded on demand from sandbox repos · live sandbox repos in CI (needs tokens)
