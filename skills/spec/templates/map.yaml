@@ -1,0 +1,15 @@
+# Ticket map — strict format, parsed by fx. Do not add other keys.
+# Status + tries are not here: they live in the engine DB (`fx status`, `fx set`).
+# scope: tags from context/INDEX.md. scenarios: ≤ 6. depends_on: ticket ids (DAG, no cycles).
+feature: <feature>
+tickets:
+  - id: TKT-1
+    title: <observable outcome in one line>
+    scope: [api, persistence]
+    scenarios: [SC-1, SC-2]
+    depends_on: []
+  - id: TKT-2
+    title: <observable outcome in one line>
+    scope: [api]
+    scenarios: [SC-3]
+    depends_on: [TKT-1]
