@@ -25,12 +25,12 @@ categories: happy, validation, not-found, conflict, invalid-state, idempotency, 
 - app under test: in-process `create_app(settings, deps)` with fakes injected; httpx `TestClient`
 - isolation: fresh temp dir per test (db, workspaces, bare git remote)
 - UI e2e: `ui/e2e/` Playwright against engine started with fakes; unit/component: Vitest in `ui/tests/`
-- reference test: `engine/tests/functional/test_projects.py`; git repo builders: `engine/tests/builders.py`
+- reference test: `engine/tests/functional/test_projects.py`; builders: `engine/tests/builders.py` (`make_git_repo`, `add_cart_project`, `start_and_wait`)
 
 ## Fakes (external boundaries only)
 | External system | Fake | Location |
 |---|---|---|
-| Claude Messages API | scripted LLM client (queued responses, tool calls, usage) | `engine/tests/fakes/llm.py` |
+| Claude Messages API | `FakeLlm` (script, repeat, fail_with; records requests), helpers `tool_use`, `final` | `engine/tests/fakes/llm.py` |
 | GitLab / GitHub | in-memory RepoHost (issues, MRs, approvals, CI) | `engine/tests/fakes/host.py` |
 | git remote | real local bare repo (not a fake) | per-test temp dir |
 

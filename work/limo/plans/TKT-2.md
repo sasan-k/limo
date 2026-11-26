@@ -3,8 +3,8 @@ ticket: TKT-2
 feature: limo
 scenarios: [SC-3, SC-4, SC-5, SC-6, SC-7]
 scope: [agents]
-revision: 0
-run: all
+revision: 1
+run: from-STEP-15
 read: [work/limo/map.yaml, work/limo/features/agents.feature, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/layout.md, context/api.md, context/data.md, context/adr/INDEX.md, ADR-4:L2, ADR-5:L2, ADR-6:L2, ADR-9:L2, ADR-10:L2, engine/pyproject.toml, engine/limo/app.py, engine/limo/config.py, engine/limo/agents/*.py, engine/limo/projects/repo.py, engine/limo/projects/service.py, engine/tests/conftest.py, engine/tests/builders.py, engine/tests/functional/test_agents.py, skills/build/SKILL.md, claude-api skill (python streaming, fallbacks)]
 ---
 # TKT-2: Agent runs get only their prompt, task and allowlisted tools
@@ -98,6 +98,8 @@ read: [work/limo/map.yaml, work/limo/features/agents.feature, context/INDEX.md, 
 - `engine/tests/conftest.py` — STEP-3 edit
 - `engine/tests/builders.py` — STEP-3 edit
 - `skills/plan/SKILL.md` — read by FT-2.1 at test time only (do not edit)
+- `engine/limo/agents/service.py`, `engine/limo/agents/repo.py` — STEP-15..STEP-17 edit
+- `engine/limo/agents/models.py` — read (`ToolCall`)
 
 ## Steps
 ### STEP-1 add the Anthropic SDK
@@ -393,6 +395,31 @@ self._runs.finish(run.id, "failed", None, "max turns reached")
 - file: none new (edit only lines a gate reports, in files this plan created or edited)
 - do: `mise run fmt`, then `mise run gates`, then `mise run test`
 - verify: gates exit 0; `mise run test` → all passed (14 from TKT-1 + 16 from TKT-2 incl. parametrized cases count as reported)
+
+### STEP-15 group RunService dependencies (revision 1: verify R-1)
+- file: `engine/limo/agents/service.py` (edit)
+- do: add two frozen dataclasses at the top: `RunStores(runs: RunRepo, projects: ProjectRepo)` and `RunConfig(skills_dir: Path, model: str, max_turns: int)`. Change the constructor to `__init__(self, stores: RunStores, llm: LlmClient, tools: ToolBox, config: RunConfig)`; the service creates its own `ThreadPoolExecutor(max_workers=1, thread_name_prefix="limo-run")` and gains `close() -> None` that calls `shutdown(wait=True, cancel_futures=True)`. Remove the `# noqa: PLR0913`. Update attribute uses (`self._stores.runs`, `self._config.model`, …).
+- verify: `cd engine && uv run python -c "import limo.agents.service"` → exit 0
+
+### STEP-16 add_tool_call takes a ToolCall (revision 1: verify R-1)
+- file: `engine/limo/agents/repo.py` (edit)
+- do: change to `add_tool_call(self, run_id: str, call: ToolCall) -> None`, inserting `call.seq, call.name, call.target, call.status, call.summary`; remove the `# noqa: PLR0913`
+- verify: `cd engine && uv run python -c "import limo.agents.repo"` → exit 0
+
+### STEP-17 running counter for tool-call seq (revision 1: verify R-2)
+- file: `engine/limo/agents/service.py` (edit)
+- do: in `_loop` keep `seq = 0`; for each tool use do `seq += 1` and call `self._tool_result(run, ctx, use, seq)`; `_tool_result` builds `ToolCall(seq=seq, name=use["name"], target=outcome.target, status=outcome.status, summary=outcome.text[:200])` and passes it to `add_tool_call`. No `tool_calls()` read inside the loop.
+- verify: `cd engine && uv run python -c "import limo.agents.service"` → exit 0
+
+### STEP-18 wiring
+- file: `engine/limo/app.py` (edit)
+- do: remove the app-level `ThreadPoolExecutor`; build `RunService(RunStores(RunRepo(db), ProjectRepo(db)), deps.llm, ToolBox(deps.executor, settings.command_timeout_s), RunConfig(settings.skills_dir, settings.default_model, settings.max_turns))`; the lifespan calls `runs.close()` after `yield`
+- verify: `mise run test:engine` → 28 passed
+
+### STEP-19 format, gates, no suppressions
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, then `mise run gates`, then `mise run test`; `grep -rn "noqa" engine/limo` must print nothing
+- verify: gates exit 0; `mise run test` → 28 passed; grep prints nothing
 
 ## Do not
 - add usage/cost recording, model-per-agent settings, runner logic, SSE, or UI

@@ -26,9 +26,9 @@
 ## Main entities
 - `projects` — id, name (unique), git_url, host (github|gitlab), status, default_branch, workspace, created_at — `001_projects.sql`
 - `tickets` — status + tries per (feature, ticket) — `scripts/fx.py`
-- `runs` — one agent run: agent, project, feature, ticket, attempt, status, heartbeat, model, started/ended
+- `runs` — id, project_id, agent, feature, ticket, status (queued|running|succeeded|failed), model, output, error, created_at, finished_at — `002_runs.sql` (attempt, heartbeat: planned)
 - `usage` — tokens per Messages API call + `cost_micros`, linked to a run
-- `tool_calls` — per run: tool name, target, result summary
+- `tool_calls` — run_id, seq, name, target, status (ok|error|rejected), summary, created_at — `002_runs.sql`
 - `incidents` — stuck event, resolver report path, applied action
 - `prices` — per model: $/MTok for input, output, cache read, cache write (editable)
 - `settings` — model per agent, caps, polling interval

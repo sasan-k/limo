@@ -2,7 +2,7 @@
 name = "limo"
 version = "0.1.0"
 requires-python = ">=3.12,<3.13"
-dependencies = ["fastapi", "uvicorn", "pydantic-settings"]
+dependencies = ["fastapi", "uvicorn", "pydantic-settings", "anthropic"]
 
 [dependency-groups]
 dev = ["pytest", "httpx", "ruff", "mypy", "import-linter"]
@@ -49,4 +49,4 @@ root_package = "limo"
 name = "Services use ports, not adapters (ADR-4)"
 type = "forbidden"
 source_modules = ["limo.projects", "limo.agents", "limo.store", "limo.common"]
-forbidden_modules = ["limo.executor.local", "limo.api", "limo.app"]
+forbidden_modules = ["limo.executor.local", "limo.api", "limo.app", "limo.llm.anthropic_client"]

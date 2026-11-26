@@ -6,8 +6,8 @@
 skills/<agent>/SKILL.md + templates/   # agent prompts + reference files (edited from the UI)
 scripts/fx.py                          # ticket state + checks CLI (stdlib only)
 engine/                                # Python package `limo`, pyproject.toml, uv.lock
-  factory/{api,runner,agents,resolver,hosts,executor,store,cost}/
-  factory/app.py  factory/config.py
+  limo/{api,agents,llm,projects,executor,store,common}/   # planned: runner, resolver, hosts, cost
+  limo/app.py  limo/config.py
   tests/functional/  tests/fakes/  tests/unit/
 ui/                                    # (planned) React SPA
   src/{pages,components,api,lib}/  tests/  e2e/
@@ -30,10 +30,10 @@ mise.toml  .env.example                # tools, tasks, config template
 | SSE event type | `engine/limo/api/events.py` | (planned) |
 | domain logic | `engine/limo/<module>/service.py` | `engine/limo/projects/service.py` |
 | port + adapter | `engine/limo/<module>/ports.py` + `<adapter>.py` | `engine/limo/executor/ports.py` + `local.py` |
-| agent tool | `engine/limo/agents/tools/<tool>.py` | (planned) |
+| agent tool | `engine/limo/agents/tools.py` (handler + `TOOL_SPECS`) + `allowlists.py` | `_read_file` in `tools.py` |
 | table / migration | `engine/limo/store/migrations/NNN_<name>.sql` + `<module>/repo.py` | `001_projects.sql`, `projects/repo.py` |
 | functional test | `engine/tests/functional/test_<area>.py` | `engine/tests/functional/test_projects.py` |
-| fake | `engine/tests/fakes/<system>.py` | (planned) |
+| fake | `engine/tests/fakes/<system>.py` | `engine/tests/fakes/llm.py` |
 | UI page | `ui/src/pages/<Page>.tsx` | (planned) |
 | UI component | `ui/src/components/<Name>.tsx` | shadcn/ui generated components |
 
