@@ -25,7 +25,7 @@
 ## Patterns — use
 - app factory `create_app(settings, deps)` so tests inject fakes (ADR-5)
 - streaming Messages API calls with SDK retries; log usage per call (ADR-6)
-- SQL in `store/` repositories only, parameterized (`?`)
+- SQL only in `<module>/repo.py` (and the `store/db.py` migrator), parameterized (`?`) — ref: `engine/limo/projects/repo.py`
 
 ## Patterns — avoid
 - blocking calls in async routes → run sync work via `run_in_threadpool` or the runner thread

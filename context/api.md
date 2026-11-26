@@ -31,5 +31,5 @@
 - GitLab REST v4 / GitHub REST via `hosts/` adapters (httpx); tokens from config
 
 ## Reference implementations
-- endpoint: (planned) first endpoint ticket
+- endpoint: `engine/limo/api/projects_routes.py`; error mapping: `engine/limo/api/errors.py`
 - SSE: (planned) `engine/limo/api/events.py`

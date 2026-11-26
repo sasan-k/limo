@@ -1,11 +1,11 @@
 # Stack
 <!-- Read for versions, libs, tooling. ≤ 60 lines. Single source of truth for versions. -->
-<!-- Exact library versions are pinned in engine/uv.lock and ui/package-lock.json (planned). -->
+<!-- Exact library versions are pinned in engine/uv.lock and ui/package-lock.json (ui: planned). -->
 
 ## Runtime
 - engine: Python 3.12, FastAPI, served by uvicorn (ADR-1)
 - ui: TypeScript 5, React, Vite, Node 22 LTS (ADR-1)
-- tool versions pinned in `mise.toml` (planned): python, uv, node
+- tool versions pinned in `mise.toml`: python 3.12.16, node 22.23.5, uv 0.13.10; engine `requires-python >=3.12,<3.13`
 
 ## Data & messaging
 - SQLite 3 via stdlib `sqlite3` — app state, ticket state, runs, usage (ADR-3)
@@ -33,5 +33,5 @@
 
 ## Environments
 - local only: `mise run up` → engine on 127.0.0.1:8700, ui on 127.0.0.1:5173 (dev) or served by engine (build)
-- config: `.env` (gitignored; template `.env.example`, planned) loaded by mise; settings model `engine/limo/config.py` (planned)
+- config: `.env` (gitignored; template `.env.example`) loaded by pydantic-settings (`LIMO_` prefix) in `engine/limo/config.py`
 - app data dir: `.factory/` (gitignored): `state.db`, `workspaces/<project>/`
