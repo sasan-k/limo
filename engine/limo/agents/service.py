@@ -53,6 +53,7 @@ class RunService:
         if project is None:
             raise NotFound("project_not_found", f"project {project_name} not found")
         model = self._stores.agent_settings.get(data.agent) or self._config.model
+        attempt = self._stores.runs.count_attempts(project.id, data.feature, data.ticket, data.agent) + 1
         run = Run(
             id=uuid4().hex,
             project=project_name,
@@ -68,6 +69,7 @@ class RunService:
             args=data.args,
             ticket_status=data.ticket_status,
             note=data.note,
+            attempt=attempt,
         )
         self._stores.runs.insert(run, project.id)
         self._pool.submit(self._execute, run.id)

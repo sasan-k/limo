@@ -25,6 +25,14 @@ class ProjectRepo:
         finally:
             conn.close()
 
+    def get_by_id(self, project_id: str) -> Project | None:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+        finally:
+            conn.close()
+        return None if row is None else Project(**dict(row))
+
     def get_by_name(self, name: str) -> Project | None:
         conn = connect(self._db_path)
         try:

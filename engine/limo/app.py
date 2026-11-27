@@ -45,6 +45,7 @@ from limo.llm.anthropic_client import AnthropicLlm
 from limo.llm.ports import LlmClient
 from limo.projects.repo import ProjectRepo
 from limo.projects.service import ProjectService
+from limo.runner.recovery import RecoveryService
 from limo.runner.service import RunnerDeps, RunnerService
 from limo.runner.shipping import ShippingService
 from limo.runner.tickets import TicketBoard
@@ -66,6 +67,11 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     )
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     migrate(settings.db_path)
+    RecoveryService(
+        RunRepo(settings.db_path),
+        ProjectRepo(settings.db_path),
+        GitOps(deps.executor, settings.command_timeout_s),
+    ).recover()
     projects = ProjectService(
         ProjectRepo(settings.db_path), deps.executor, settings.workspaces_dir, settings.command_timeout_s
     )

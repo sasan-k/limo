@@ -34,6 +34,14 @@ class GitOps:
         if checkout.code != 0:
             raise GitError(checkout.stderr)
 
+    def reset_workspace(self, workspace: Path) -> None:
+        reset = self._git(workspace, "reset", "--hard", "HEAD")
+        if reset.code != 0:
+            raise GitError(reset.stderr)
+        cleaned = self._git(workspace, "clean", "-fd", "-e", "work")
+        if cleaned.code != 0:
+            raise GitError(cleaned.stderr)
+
     def commit_and_push(self, workspace: Path, branch: str, message: str) -> None:
         added = self._git(workspace, "add", "-A")
         if added.code != 0:

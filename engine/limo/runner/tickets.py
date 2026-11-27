@@ -5,7 +5,7 @@ from pathlib import Path
 from limo.common.errors import Conflict, NotFound
 from limo.executor.ports import Executor, ExecutorError
 
-STATUS_LINE = re.compile(r"^(TKT-\d+): status=(\S+)", re.M)
+STATUS_LINE = re.compile(r"^(TKT-\d+): status=(\S+) build_tries=(\d+) plan_tries=(\d+)", re.M)
 READY_LINE = re.compile(r"^ready: (.*)$", re.M)
 
 
@@ -21,6 +21,8 @@ class TicketRef:
 class TicketState:
     id: str
     status: str
+    build_tries: int = 0
+    plan_tries: int = 0
 
 
 def _first_line(text: str) -> str:
@@ -47,7 +49,10 @@ class TicketBoard:
         for result in (status, ready):
             if result.code != 0:
                 raise Conflict("map_invalid", _first_line(result.stderr))
-        states = [TicketState(id=i, status=s) for i, s in STATUS_LINE.findall(status.stdout)]
+        states = [
+            TicketState(id=i, status=s, build_tries=int(b), plan_tries=int(p))
+            for i, s, b, p in STATUS_LINE.findall(status.stdout)
+        ]
         match = READY_LINE.search(ready.stdout)
         ready_ids = [] if match is None or match.group(1).strip() == "-" else match.group(1).split()
         return states, ready_ids

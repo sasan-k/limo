@@ -20,6 +20,7 @@
 | Inbox | UI list of escalated tickets waiting for a human | `Inbox` | Board |
 | Incident | A stuck event on a ticket, with its bundle file | `Incident` | Escalation |
 | Intake form | UI form where a user pastes a feature's requirements | `IntakeForm` | Inbox |
+| Interrupted | A run cut off by a restart; its stage is dispatched again within limits | `interrupted` | Failed |
 | Issue | Repo-host issue mirroring one ticket | `Issue` | Ticket |
 | Merge request | GitLab MR or GitHub PR for one ticket branch | `MergeRequest` | Issue |
 | Phase | A feature's stage before tickets: architecture, spec, nfr, then tickets | `phase` | Stage |

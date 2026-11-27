@@ -31,6 +31,8 @@ def trigger_for(
         return ("question", None)
     if state.status == "blocked":
         return ("blocked", None)
+    if latest is not None and latest.status == "interrupted":
+        return ("limits", latest.id) if latest.agent == "build" and state.build_tries >= 2 else None
     if latest is not None and latest.status == "failed":
         error = latest.error or ""
         if error == "timeout":
