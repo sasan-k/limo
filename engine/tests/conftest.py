@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -9,6 +10,9 @@ from limo.config import Settings
 from limo.executor.local import LocalExecutor
 from tests.fakes.host import FakeHost
 from tests.fakes.llm import FakeLlm
+
+# Tests drive the Messages API fake unless a test picks the claude-cli backend (ADR-14).
+os.environ.setdefault("LIMO_AGENT_BACKEND", "api")
 
 
 @pytest.fixture

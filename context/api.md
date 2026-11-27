@@ -27,7 +27,8 @@
 - none in v1: engine binds to 127.0.0.1 only (ADR-7)
 
 ## External APIs (outbound)
-- Claude Messages API via anthropic SDK only (ADR-6)
+- Claude: local `claude -p` (default, ADR-14) or Messages API via anthropic SDK (backend `api`, ADR-6)
+- inbound from agents: `POST /mcp/runs/{run_id}` JSON-RPC (MCP `initialize`, `tools/list`, `tools/call`, `ping`), Bearer run token; not in OpenAPI
 - GitLab REST v4 / GitHub REST via `hosts/` adapters (httpx); tokens from config
 
 ## Reference implementations

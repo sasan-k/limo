@@ -1,4 +1,6 @@
+import tempfile
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -34,6 +36,10 @@ class Settings(BaseSettings):
     sse_heartbeat_s: float = 15.0
     runner_tick_s: float = 2.0
     host_poll_s: float = 180.0
+    agent_backend: Literal["claude-cli", "api"] = "claude-cli"
+    claude_bin: str = "claude"
+    engine_url: str = "http://127.0.0.1:8700"
+    agent_cwd: Path = Path(tempfile.gettempdir()) / "limo-agent"
 
     @property
     def db_path(self) -> Path:

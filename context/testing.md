@@ -32,6 +32,7 @@ categories: happy, validation, not-found, conflict, invalid-state, idempotency, 
 ## Fakes (external boundaries only)
 | External system | Fake | Location |
 |---|---|---|
+| local `claude -p` (ADR-14) | `FakeCli` (records request + MCP config; `hold`/`release` to call the run's MCP endpoint; `result`, `fail_with`); adapter contract test with `tests/fakes/fake_claude.py`; tests default to backend `api` (`conftest.py`) | `engine/tests/fakes/cli.py` |
 | Claude Messages API | `FakeLlm` (script, repeat, fail_with; records requests; echoes request model), helpers `tool_use(…, usage=)`, `final`, `final_with(usage)` | `engine/tests/fakes/llm.py` |
 | GitLab / GitHub | `FakeHost` (MRs: approve, request_changes, merge via real git on the bare repo; issues: titles, status + extra labels, comments (`reply(n, body)` = human); fail_next; records calls) | `engine/tests/fakes/host.py` |
 | git remote | real local bare repo (not a fake) | per-test temp dir |

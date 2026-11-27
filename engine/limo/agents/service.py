@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from limo.agents.cli_runner import CliRunner
 from limo.agents.context_pack import parse_context_pack
 from limo.agents.models import Run, RunIn, ToolCall
 from limo.agents.repo import RunRepo
@@ -24,6 +25,18 @@ def _payload(run: Run) -> dict[str, object]:
     return {"run_id": run.id, "agent": run.agent, "feature": run.feature, "ticket": run.ticket}
 
 
+def _task(run: Run) -> str:
+    """The run's task message: feature, ticket, args and the replan note."""
+    task = f"feature={run.feature}"
+    if run.ticket:
+        task += f" ticket={run.ticket}"
+    if run.args:
+        task += f" {run.args}"
+    if run.note:
+        task += f"\nnote: {run.note}"
+    return task
+
+
 @dataclass(frozen=True)
 class RunStores:
     runs: RunRepo
@@ -40,14 +53,24 @@ class RunConfig:
     model: str
     max_turns: int
     fx_db: Path
+    backend: str = "api"
+
+
+@dataclass(frozen=True)
+class Backends:
+    """How runs talk to Claude: the Messages API loop (ADR-6) or local `claude -p` sessions (ADR-14)."""
+
+    llm: LlmClient
+    cli: CliRunner | None = None
 
 
 class RunService:
     def __init__(
-        self, stores: RunStores, llm: LlmClient, tools: ToolBox, config: RunConfig, events: EventBus
+        self, stores: RunStores, backends: Backends, tools: ToolBox, config: RunConfig, events: EventBus
     ) -> None:
         self._stores = stores
-        self._llm = llm
+        self._llm = backends.llm
+        self._cli = backends.cli
         self._tools = tools
         self._config = config
         self._events = events
@@ -141,18 +164,32 @@ class RunService:
             readable = {**pack, plan_rel: None, "context/INDEX.md": None}
         env = {"FX_DB": str(self._config.fx_db), "FX_SCOPE": project.name}
         ctx = ToolContext(run.agent, workspace, self._config.skills_dir / run.agent, readable, env=env)
-        self._loop(run, ctx, ref)
+        if self._config.backend == "claude-cli" and self._cli is not None:
+            self._cli_session(run, ctx, ref, self._cli)
+        else:
+            self._loop(run, ctx, ref)
+
+    def _cli_session(self, run: Run, ctx: ToolContext, ref: CallRef, cli: CliRunner) -> None:
+        budget = self._stores.budget.remaining_usd(ref)
+        if budget is not None and budget <= 0:
+            self._stop_for_budget(run, ref, self._stores.budget.exceeded(ref) or "budget reached")
+            return
+
+        def on_event(event: dict[str, Any]) -> None:
+            if event.get("type") == "assistant":
+                self._events.publish("run.updated", ref.project_id, _payload(run))
+
+        result = cli.run(run, ctx, _task(run), budget, on_event)
+        self._stores.cost.record_billed(ref, 1, run.model, result.usage, result.cost_micros)
+        self._events.publish("cost.updated", ref.project_id, {"run_id": run.id})
+        if result.ok:
+            self._stores.runs.finish(run.id, "succeeded", result.text, None)
+        else:
+            self._stores.runs.finish(run.id, "failed", result.text, result.error)
 
     def _loop(self, run: Run, ctx: ToolContext, ref: CallRef) -> None:
         system = (self._config.skills_dir / run.agent / "SKILL.md").read_text()
-        task = f"feature={run.feature}"
-        if run.ticket:
-            task += f" ticket={run.ticket}"
-        if run.args:
-            task += f" {run.args}"
-        if run.note:
-            task += f"\nnote: {run.note}"
-        messages: list[dict[str, Any]] = [{"role": "user", "content": task}]
+        messages: list[dict[str, Any]] = [{"role": "user", "content": _task(run)}]
         seq = 0
         call_no = 0
         for _ in range(self._config.max_turns):

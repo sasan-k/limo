@@ -67,6 +67,16 @@ class BudgetService:
             return f"{ref.agent} budget reached: {_dollars(agent_spent)} of {_dollars(agent_limit)}"
         return None
 
+    def remaining_usd(self, ref: CallRef) -> float | None:
+        """Budget left for this agent on this ticket (the lower of ticket and agent), in USD."""
+        if ref.ticket is None:
+            return None
+        ticket_limit, agent_limits = self._limits(BudgetKey(ref.project_id, ref.feature, ref.ticket))
+        ticket_left = ticket_limit - self._usage.ticket_spent(ref.project_id, ref.feature, ref.ticket)
+        agent_spent = self._usage.agent_spent(ref.project_id, ref.feature, ref.ticket).get(ref.agent, 0)
+        agent_left = agent_limits[ref.agent] - agent_spent
+        return max(0, min(ticket_left, agent_left)) / 1_000_000
+
     def _project(self, project_name: str) -> Project:
         project = self._projects.get_by_name(project_name)
         if project is None:
