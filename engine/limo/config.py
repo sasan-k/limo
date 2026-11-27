@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     gitlab_api_url: str = "https://gitlab.com/api/v4"
     host_timeout_s: float = 10.0
     sse_heartbeat_s: float = 15.0
+    runner_tick_s: float = 2.0
+    host_poll_s: float = 180.0
 
     @property
     def db_path(self) -> Path:

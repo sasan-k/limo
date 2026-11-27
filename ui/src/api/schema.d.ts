@@ -312,6 +312,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Switch */
+        get: operations["get_switch_api_runner_get"];
+        /** Set Switch */
+        put: operations["set_switch_api_runner_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{name}/features/{feature}/incidents": {
         parameters: {
             query?: never;
@@ -799,6 +817,16 @@ export interface components {
             ticket_status?: string | null;
             /** Note */
             note?: string | null;
+        };
+        /** RunnerSwitch */
+        RunnerSwitch: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** RunnerSwitchIn */
+        RunnerSwitchIn: {
+            /** Enabled */
+            enabled: boolean;
         };
         /** StepResult */
         StepResult: {
@@ -1450,6 +1478,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PollResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_switch_api_runner_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerSwitch"];
+                };
+            };
+        };
+    };
+    set_switch_api_runner_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerSwitchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerSwitch"];
                 };
             };
             /** @description Validation Error */

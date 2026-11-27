@@ -24,6 +24,7 @@ from limo.api.projects_routes import projects_router
 from limo.api.prompts_routes import prompts_router
 from limo.api.runner_routes import runner_router
 from limo.api.runs_routes import runs_router
+from limo.api.switch_routes import switch_router
 from limo.board.service import BoardService
 from limo.budget.repo import BudgetRepo
 from limo.budget.service import BudgetService
@@ -57,6 +58,7 @@ from limo.projects.repo import ProjectRepo
 from limo.projects.service import ProjectService
 from limo.prompts.repo import PromptSaveRepo
 from limo.prompts.service import PromptService
+from limo.runner.loop import LoopConfig, RunnerLoop
 from limo.runner.recovery import RecoveryService
 from limo.runner.service import RunnerDeps, RunnerService
 from limo.runner.shipping import ShippingService
@@ -150,10 +152,18 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         ),
         settings.max_concurrent_tickets,
     )
+    loop = RunnerLoop(
+        runner,
+        ProjectRepo(settings.db_path),
+        feature_repo,
+        LoopConfig(settings.runner_tick_s, settings.host_poll_s),
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        loop.start()
         yield
+        loop.stop()
         runs.close()
 
     app = FastAPI(
@@ -177,6 +187,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     app.include_router(runs_router(runs))
     app.include_router(cost_router(cost))
     app.include_router(runner_router(runner))
+    app.include_router(switch_router(loop))
     app.include_router(incidents_router(runner))
     app.include_router(budget_router(budget))
     app.include_router(inbox_router(runner))

@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, StrictBool
 
 from limo.agents.models import Run
 
@@ -22,3 +22,13 @@ class StepResult(BaseModel):
 class PollResult(BaseModel):
     merged: list[str]
     changes_requested: list[str]
+
+
+class RunnerSwitch(BaseModel):
+    enabled: bool
+
+
+class RunnerSwitchIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: StrictBool

@@ -35,7 +35,7 @@
 | Review report | `reports/TKT-n-review-<k>.md`: reviewer comments for Plan | `review_report` | Resolve report |
 | Run | One execution of one agent on one ticket (or feature) | `Run` | Ticket |
 | Runner | Engine loop dispatching agents by ticket status | `Runner` | Scheduler |
-| Runner switch | UI on/off control for the runner; starts off | `runner_enabled` | Agent state |
+| Runner switch | UI on/off control for the runner; starts off | `RunnerLoop.enabled` (`/api/runner`) | Agent state |
 | Scheduler | Durable loop + crash recovery behind an interface | `Scheduler` | Runner |
 | Stage | Pipeline step: architecture, spec, plan, build, verify, close | `Stage` | Agent |
 | Stuck | Ticket blocked / no status change / crash / timeout / limits / question | `is_stuck` | Blocked |
