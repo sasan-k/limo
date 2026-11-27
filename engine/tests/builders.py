@@ -7,6 +7,7 @@ from typing import Any
 from fastapi.testclient import TestClient
 
 from limo.config import Settings
+from tests.fakes.llm import FakeLlm, stage_responder
 
 CART_PLAN = "# TKT-1\n\n## Context pack\n- `src/cart.py` — cart logic\n\n## Steps\n"
 CART_MAP = """feature: cart
@@ -125,3 +126,22 @@ def start_and_wait(
             return run
         time.sleep(0.02)
     raise AssertionError(f"run {run_id} did not finish")
+
+
+def drive_to_review(client: TestClient, llm: FakeLlm, settings: Settings, project: str = "shop") -> None:
+    """Run plan/build/verify/close for TKT-1 through POST step until its status is review (max 8 steps)."""
+    llm.responder = stage_responder(settings.skills_dir)
+    for _ in range(8):
+        if get_status(settings, project, "TKT-1") == "review":
+            return
+        r = client.post(f"/api/projects/{project}/features/cart/step")
+        assert r.status_code == 200
+        run = r.json()["run"]
+        if run is not None:
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                state = client.get(f"/api/runs/{run['id']}").json()["status"]
+                if state in ("succeeded", "failed"):
+                    break
+                time.sleep(0.02)
+    raise AssertionError("TKT-1 did not reach review")

@@ -29,6 +29,8 @@ For each of those steps in order:
 2. Run its `verify` command and compare with the expected result.
    - Expected `FAIL` (test-first step) and it fails for the stated reason → pass.
 3. Pass → next step. Otherwise one fix attempt, then re-verify. Still failing → stop.
+   Exception: a step whose verify runs the quality gates may fix up to 3 reported problems, one at a time,
+   each only on lines this ticket created or changed.
 
 A fix attempt may change only lines this step created or changed.
 It never changes a test's assertions or expected values.

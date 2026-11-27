@@ -12,7 +12,9 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/runner` — dispatch by ticket status, stuck guard, scheduler → `agents`, `resolver`, `hosts`, `store` (call)
 - `engine/limo/agents` — prompt registry, run service (tool loop, background worker), per-agent tools → `llm`, `executor` (call)
 - `engine/limo/llm` — LLM port + Anthropic adapter → Claude Messages API (HTTPS)
-- `engine/limo/runner` — step: dispatch by ticket status read via `fx` (one run at a time) → `agents` (call), `executor` (fx)
+- `engine/limo/runner` — step: ship `review` tickets, else dispatch by ticket status via `fx` (one run at a time); poll merge requests → `agents`, `hosts`, `vcs`, `executor` (fx)
+- `engine/limo/hosts` — RepoHost port (open MR, auto-merge, status; no merge), `UnconfiguredHost` default, `merge_requests` repo
+- `engine/limo/vcs` — git via executor: ticket branches `limo/<feature>/<ticket>`, commit (never `work/`), push
 - `engine/limo/budget` — default + per-ticket/agent budgets, spend check after each Claude API call → `cost` (usage sums)
 - `engine/limo/inbox` — holds: tickets waiting for a human (budget now) → `store`
 - `engine/limo/cost` — prices, per-call usage, run cost, project totals → `store` (file)
@@ -21,7 +23,7 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/executor` — runs commands in a workspace via `mise exec` (subprocess)
 - `engine/limo/store` — SQLite; `fx` owns the `tickets` table (file)
 - `ui` — React SPA → `engine/limo/api` via REST + SSE
-`hosts`, `resolver` and `ui` are (planned); see layout.md.
+real GitHub/GitLab adapters (TKT-18), `resolver` and `ui` are (planned); see layout.md.
 
 ## Stack
 Python 3.12 · FastAPI · SQLite · Anthropic SDK · React + TypeScript + Vite + Tailwind + shadcn/ui · mise — details: stack.md

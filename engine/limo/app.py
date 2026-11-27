@@ -26,21 +26,27 @@ from limo.cost.repo import PriceRepo, UsageRepo
 from limo.cost.service import CostService
 from limo.executor.local import LocalExecutor
 from limo.executor.ports import Executor
+from limo.hosts.ports import RepoHost
+from limo.hosts.repo import MergeRequestRepo
+from limo.hosts.unconfigured import UnconfiguredHost
 from limo.inbox.repo import HoldRepo
 from limo.inbox.service import InboxService
 from limo.llm.anthropic_client import AnthropicLlm
 from limo.llm.ports import LlmClient
 from limo.projects.repo import ProjectRepo
 from limo.projects.service import ProjectService
-from limo.runner.service import RunnerService
+from limo.runner.service import RunnerDeps, RunnerService
+from limo.runner.shipping import ShippingService
 from limo.runner.tickets import TicketBoard
 from limo.store.db import migrate
+from limo.vcs.git import GitOps
 
 
 @dataclass(frozen=True)
 class Deps:
     executor: Executor
     llm: LlmClient
+    host: RepoHost | None = None
 
 
 def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
@@ -76,11 +82,13 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         ToolBox(deps.executor, settings.command_timeout_s),
         RunConfig(settings.skills_dir, settings.default_model, settings.max_turns, fx_db=settings.db_path),
     )
+    board = TicketBoard(deps.executor, settings.db_path, settings.command_timeout_s)
+    git = GitOps(deps.executor, settings.command_timeout_s)
+    shipping = ShippingService(
+        git, deps.host or UnconfiguredHost(), MergeRequestRepo(settings.db_path), board
+    )
     runner = RunnerService(
-        runs,
-        ProjectRepo(settings.db_path),
-        TicketBoard(deps.executor, settings.db_path, settings.command_timeout_s),
-        inbox,
+        RunnerDeps(runs, ProjectRepo(settings.db_path), board, inbox, shipping, git),
         settings.max_concurrent_tickets,
     )
 

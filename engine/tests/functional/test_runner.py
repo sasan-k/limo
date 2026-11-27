@@ -64,7 +64,10 @@ def test_ft_5_3_ticket_in_review_is_not_started(
     r = post_step(client)
     assert r.status_code == 200
     assert r.json()["run"] is None
-    assert r.json()["reason"] == "no_ready_ticket"
+    assert r.json()["reason"] == "shipped"
+    again = post_step(client)
+    assert again.json()["run"] is None
+    assert again.json()["reason"] == "no_ready_ticket"
 
 
 def test_ft_5_4_one_run_at_a_time_and_stages_in_order(
@@ -74,10 +77,12 @@ def test_ft_5_4_one_run_at_a_time_and_stages_in_order(
     add_cart_project(client, tmp_path)
     llm.responder = stage_responder(settings.skills_dir)
     started: list[tuple[str, str]] = []
-    for _ in range(12):
+    for _ in range(16):
         first = post_step(client).json()
         if first["reason"] == "no_ready_ticket":
             break
+        if first["reason"] == "shipped":
+            continue
         assert first["reason"] == "started"
         second = post_step(client).json()
         assert second["reason"] == "run_active"

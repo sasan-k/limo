@@ -6,7 +6,7 @@
 skills/<agent>/SKILL.md + templates/   # agent prompts + reference files (edited from the UI)
 scripts/fx.py                          # ticket state + checks CLI (stdlib only)
 engine/                                # Python package `limo`, pyproject.toml, uv.lock
-  limo/{api,agents,llm,cost,budget,inbox,runner,projects,executor,store,common}/   # planned: resolver, hosts
+  limo/{api,agents,llm,cost,budget,inbox,runner,hosts,vcs,projects,executor,store,common}/   # planned: resolver, hosts
   limo/app.py  limo/config.py
   tests/functional/  tests/fakes/  tests/unit/
 ui/                                    # (planned) React SPA
@@ -33,7 +33,7 @@ mise.toml  .env.example                # tools, tasks, config template
 | agent tool | `engine/limo/agents/tools.py` (handler + `TOOL_SPECS`) + `allowlists.py` | `_read_file` in `tools.py` |
 | table / migration | `engine/limo/store/migrations/NNN_<name>.sql` + `<module>/repo.py` | `001_projects.sql`, `projects/repo.py` |
 | functional test | `engine/tests/functional/test_<area>.py` | `engine/tests/functional/test_projects.py` |
-| fake | `engine/tests/fakes/<system>.py` | `engine/tests/fakes/llm.py` |
+| fake | `engine/tests/fakes/<system>.py` | `engine/tests/fakes/llm.py`, `engine/tests/fakes/host.py` |
 | UI page | `ui/src/pages/<Page>.tsx` | (planned) |
 | UI component | `ui/src/components/<Name>.tsx` | shadcn/ui generated components |
 

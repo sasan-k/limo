@@ -150,6 +150,7 @@ An FT covers `SC-n` and/or `OP-n:<category>`.
 - **Repo host (GitLab/GitHub):** each ticket mirrors to an issue (humans answer there; resolver reads replies) and gets its own MR/PR. The engine DB is the source of truth for status; the issue mirrors it.
 - **Identity (Q-14):** Limo opens merge requests with its own token (bot account / app); a separate human approver approves. Adapter tests use recorded HTTP only (Q-13, ADR-12).
 - **Merge = approval only:** the factory never merges on its own. Runner enables the host's "merge when approved + pipeline succeeds"; a ticket is `done` only once its MR is merged; dependents branch from the merged code.
+- **Gates step:** Build may fix up to 3 gate-reported problems in the final gates step (lines the ticket changed only); other steps keep one fix attempt.
 - **Partial reruns:** a revision whose earlier steps passed sets `run: from-STEP-n`; Build starts there.
 - **Review status:** Close sets `review` (docs ship in the same MR/PR); runner sets `done` on merge. Changes requested → runner writes `reports/TKT-n-review-<k>.md`, ticket → `todo`; Plan decides: **fix pass** if every comment fits context-pack files with no contract/data/matrix change (appends `## Fix <k>`, `run: fix-<k>`, build_tries=0) else **re-plan** (plan_tries +1). Dependents wait; others continue.
 - **Cost:** every agent run logs tokens (input, output, cache read/write) × a configurable price table → $. Totals per agent, per ticket, per agent×ticket, overall. Agent cards show the $ of the current ticket for that agent.

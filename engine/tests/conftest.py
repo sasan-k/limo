@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from limo.app import Deps, create_app
 from limo.config import Settings
 from limo.executor.local import LocalExecutor
+from tests.fakes.host import FakeHost
 from tests.fakes.llm import FakeLlm
 
 
@@ -21,7 +22,12 @@ def settings(tmp_path: Path) -> Settings:
 
 
 @pytest.fixture
-def client(settings: Settings, llm: FakeLlm) -> Iterator[TestClient]:
-    deps = Deps(executor=LocalExecutor(path_prefix=settings.scripts_dir), llm=llm)
+def host() -> FakeHost:
+    return FakeHost()
+
+
+@pytest.fixture
+def client(settings: Settings, llm: FakeLlm, host: FakeHost) -> Iterator[TestClient]:
+    deps = Deps(executor=LocalExecutor(path_prefix=settings.scripts_dir), llm=llm, host=host)
     with TestClient(create_app(settings, deps)) as c:
         yield c

@@ -10,6 +10,14 @@ READY_LINE = re.compile(r"^ready: (.*)$", re.M)
 
 
 @dataclass(frozen=True)
+class TicketRef:
+    workspace: Path
+    project: str
+    feature: str
+    ticket: str
+
+
+@dataclass(frozen=True)
 class TicketState:
     id: str
     status: str
@@ -43,3 +51,17 @@ class TicketBoard:
         match = READY_LINE.search(ready.stdout)
         ready_ids = [] if match is None or match.group(1).strip() == "-" else match.group(1).split()
         return states, ready_ids
+
+    def set_status(self, ref: TicketRef, status: str) -> None:
+        env = {"FX_DB": str(self._fx_db), "FX_SCOPE": ref.project}
+        try:
+            result = self._executor.run(
+                ["fx", "set", f"work/{ref.feature}", ref.ticket, f"status={status}"],
+                ref.workspace,
+                self._timeout_s,
+                env=env,
+            )
+        except ExecutorError as e:
+            raise Conflict("map_invalid", _first_line(str(e))) from e
+        if result.code != 0:
+            raise Conflict("map_invalid", _first_line(result.stderr))

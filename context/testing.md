@@ -31,7 +31,7 @@ categories: happy, validation, not-found, conflict, invalid-state, idempotency, 
 | External system | Fake | Location |
 |---|---|---|
 | Claude Messages API | `FakeLlm` (script, repeat, fail_with; records requests; echoes request model), helpers `tool_use(…, usage=)`, `final`, `final_with(usage)` | `engine/tests/fakes/llm.py` |
-| GitLab / GitHub | in-memory RepoHost (issues, MRs, approvals, CI) | `engine/tests/fakes/host.py` |
+| GitLab / GitHub | `FakeHost` (approve, request_changes, merge via real git on the bare repo, fail_next; records calls) | `engine/tests/fakes/host.py` |
 | git remote | real local bare repo (not a fake) | per-test temp dir |
 
 ## Test data
