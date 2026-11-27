@@ -12,13 +12,14 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/runner` — dispatch by ticket status, stuck guard, scheduler → `agents`, `resolver`, `hosts`, `store` (call)
 - `engine/limo/agents` — prompt registry, run service (tool loop, background worker), per-agent tools → `llm`, `executor` (call)
 - `engine/limo/llm` — LLM port + Anthropic adapter → Claude Messages API (HTTPS)
+- `engine/limo/runner` — step: dispatch by ticket status read via `fx` (one run at a time) → `agents` (call), `executor` (fx)
 - `engine/limo/cost` — prices, per-call usage, run cost, project totals → `store` (file)
 - `engine/limo/resolver` — incident bundle, action validation/apply → `agents`, `store`, `hosts` (call)
 - `engine/limo/hosts` — RepoHost port; GitLab + GitHub adapters → host REST APIs (HTTPS)
 - `engine/limo/executor` — runs commands in a workspace via `mise exec` (subprocess)
 - `engine/limo/store` — SQLite; `fx` owns the `tickets` table (file)
 - `ui` — React SPA → `engine/limo/api` via REST + SSE
-`hosts`, `runner`, `resolver` and `ui` are (planned); see layout.md.
+`hosts`, `resolver` and `ui` are (planned); see layout.md.
 
 ## Stack
 Python 3.12 · FastAPI · SQLite · Anthropic SDK · React + TypeScript + Vite + Tailwind + shadcn/ui · mise — details: stack.md

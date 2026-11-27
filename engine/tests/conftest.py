@@ -22,5 +22,6 @@ def settings(tmp_path: Path) -> Settings:
 
 @pytest.fixture
 def client(settings: Settings, llm: FakeLlm) -> Iterator[TestClient]:
-    with TestClient(create_app(settings, Deps(executor=LocalExecutor(), llm=llm))) as c:
+    deps = Deps(executor=LocalExecutor(path_prefix=settings.scripts_dir), llm=llm)
+    with TestClient(create_app(settings, deps)) as c:
         yield c

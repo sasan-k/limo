@@ -14,6 +14,7 @@ from limo.api.agents_routes import agents_router
 from limo.api.cost_routes import cost_router
 from limo.api.errors import install_error_handlers
 from limo.api.projects_routes import projects_router
+from limo.api.runner_routes import runner_router
 from limo.api.runs_routes import runs_router
 from limo.config import Settings
 from limo.cost.repo import PriceRepo, UsageRepo
@@ -24,6 +25,8 @@ from limo.llm.anthropic_client import AnthropicLlm
 from limo.llm.ports import LlmClient
 from limo.projects.repo import ProjectRepo
 from limo.projects.service import ProjectService
+from limo.runner.service import RunnerService
+from limo.runner.tickets import TicketBoard
 from limo.store.db import migrate
 
 
@@ -34,7 +37,10 @@ class Deps:
 
 
 def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
-    deps = deps or Deps(executor=LocalExecutor(), llm=AnthropicLlm(settings.anthropic_api_key))
+    deps = deps or Deps(
+        executor=LocalExecutor(path_prefix=settings.scripts_dir),
+        llm=AnthropicLlm(settings.anthropic_api_key),
+    )
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     migrate(settings.db_path)
     projects = ProjectService(
@@ -48,7 +54,13 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         RunStores(RunRepo(settings.db_path), ProjectRepo(settings.db_path), agent_settings, cost),
         deps.llm,
         ToolBox(deps.executor, settings.command_timeout_s),
-        RunConfig(settings.skills_dir, settings.default_model, settings.max_turns),
+        RunConfig(settings.skills_dir, settings.default_model, settings.max_turns, fx_db=settings.db_path),
+    )
+    runner = RunnerService(
+        runs,
+        ProjectRepo(settings.db_path),
+        TicketBoard(deps.executor, settings.db_path, settings.command_timeout_s),
+        settings.max_concurrent_tickets,
     )
 
     @asynccontextmanager
@@ -68,6 +80,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     )
     app.include_router(runs_router(runs))
     app.include_router(cost_router(cost))
+    app.include_router(runner_router(runner))
     return app
 
 

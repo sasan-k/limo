@@ -3,8 +3,8 @@ ticket: TKT-5
 feature: limo
 scenarios: [SC-14, SC-15, SC-16, SC-17, SC-18]
 scope: [runner]
-revision: 0
-run: all
+revision: 1
+run: from-STEP-12
 read: [work/limo/map.yaml, work/limo/features/runner.feature, work/limo/questions.md#Q-4, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/api.md, context/data.md, context/layout.md, ADR-3:L2, ADR-4:L2, ADR-10:L2, ADR-11:L2, scripts/fx.py, engine/limo/agents/service.py, engine/limo/agents/tools.py, engine/limo/agents/repo.py, engine/limo/executor/*.py, engine/limo/app.py, engine/limo/config.py, engine/tests/builders.py, engine/tests/conftest.py, engine/tests/fakes/llm.py]
 ---
 # TKT-5: The runner moves one ticket at a time through the stages
@@ -82,6 +82,7 @@ All in `engine/tests/functional/test_runner.py`. Step responses are read as `r.j
 - `engine/limo/api/cost_routes.py` — like: router factory with path patterns
 - `engine/tests/conftest.py`, `engine/tests/builders.py`, `engine/tests/fakes/llm.py` — STEP-3 edit
 - `engine/tests/functional/test_runs.py`:75-90 — STEP-3 edit (its own `LocalExecutor()`)
+- `engine/limo/runner/service.py` — STEP-12 edit
 
 ## Steps
 ### STEP-1 fx: scope and wrapper
@@ -186,6 +187,27 @@ def stage_responder(skills_dir: Path) -> Callable[[LlmRequest], LlmResponse]:
 - verify: `mise run test:engine -- -k ft_5` → 13 passed
 
 ### STEP-11 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` → 60 passed
+
+### STEP-12 type the dispatch target (revision 1: verify r0 types gate)
+- file: `engine/limo/runner/service.py` (edit)
+- do: replace the `NEXT_AGENT` definition and the target lines in `step` with exactly this; change nothing else
+```python
+AgentName = Literal["plan", "build", "verify", "close"]
+NEXT_AGENT: dict[str, AgentName] = {"verified": "close", "built": "verify", "planned": "build"}
+```
+```python
+        target: tuple[AgentName, str] | None = next(
+            ((NEXT_AGENT[s.status], s.id) for s in states if s.status in NEXT_AGENT), None
+        )
+        if target is None and ready:
+            target = ("plan", ready[0])
+```
+- verify: `mise run types` → `Success`
+
+### STEP-13 format, gates, full suite
 - file: none new (edit only lines a gate reports, in files this plan created or edited)
 - do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
 - verify: gates exit 0; `mise run test` → 60 passed

@@ -104,3 +104,11 @@ class RunRepo:
         finally:
             conn.close()
         return [ToolCall(**dict(row)) for row in rows]
+
+    def active_count(self) -> int:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute("SELECT COUNT(*) FROM runs WHERE status IN ('queued', 'running')").fetchone()
+        finally:
+            conn.close()
+        return int(row[0])

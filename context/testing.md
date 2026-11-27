@@ -25,7 +25,7 @@ categories: happy, validation, not-found, conflict, invalid-state, idempotency, 
 - app under test: in-process `create_app(settings, deps)` with fakes injected; httpx `TestClient`
 - isolation: fresh temp dir per test (db, workspaces, bare git remote)
 - UI e2e: `ui/e2e/` Playwright against engine started with fakes; unit/component: Vitest in `ui/tests/`
-- reference test: `engine/tests/functional/test_projects.py`; builders: `engine/tests/builders.py` (`make_git_repo`, `add_cart_project`, `start_and_wait`)
+- reference test: `engine/tests/functional/test_projects.py`; builders: `engine/tests/builders.py` (`make_git_repo`, `add_cart_project`, `start_and_wait`, `set_status`, `get_status`, `write_workspace_file`, `fx_env`); fake `stage_responder` acts as each stage agent
 
 ## Fakes (external boundaries only)
 | External system | Fake | Location |

@@ -82,6 +82,9 @@ def db(work):
 def load_tickets(work):
     """map.yaml definitions merged with DB state."""
     feature, tickets = load_map(work)
+    scope = os.environ.get("FX_SCOPE")
+    if scope:
+        feature = f"{scope}/{feature}"
     with db(work) as con:
         for t in tickets:
             con.execute("INSERT OR IGNORE INTO tickets VALUES (?, ?, 'todo', 0, 0)", (feature, t["id"]))

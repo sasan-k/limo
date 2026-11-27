@@ -58,6 +58,7 @@ class ToolContext:
     workspace: Path
     agent_dir: Path
     readable: dict[str, tuple[int, int] | None] | None
+    env: dict[str, str]
 
 
 @dataclass(frozen=True)
@@ -209,7 +210,7 @@ class ToolBox:
             raise _InvalidInput("argv required")
         target = " ".join(argv)
         try:
-            result = self._executor.run(argv, ctx.workspace, self._timeout_s)
+            result = self._executor.run(argv, ctx.workspace, self._timeout_s, env=ctx.env)
         except ExecutorError as e:
             return ToolOutcome(f"command failed: {e}", "error", target)
         if result.code != 0:

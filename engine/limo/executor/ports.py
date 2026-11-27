@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -16,4 +16,6 @@ class ExecutorError(Exception):
 
 
 class Executor(Protocol):
-    def run(self, argv: Sequence[str], cwd: Path, timeout_s: float) -> CommandResult: ...
+    def run(
+        self, argv: Sequence[str], cwd: Path, timeout_s: float, env: Mapping[str, str] | None = None
+    ) -> CommandResult: ...
