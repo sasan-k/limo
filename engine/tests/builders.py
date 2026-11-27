@@ -83,9 +83,9 @@ def fx_env(settings: Settings, project: str) -> dict[str, str]:
     return env
 
 
-def set_status(settings: Settings, project: str, ticket: str, status: str) -> None:
+def set_status(settings: Settings, project: str, ticket: str, status: str, *extra: str) -> None:
     subprocess.run(
-        ["fx", "set", "work/cart", ticket, f"status={status}"],
+        ["fx", "set", "work/cart", ticket, f"status={status}", *extra],
         cwd=settings.workspaces_dir / project,
         env=fx_env(settings, project),
         check=True,

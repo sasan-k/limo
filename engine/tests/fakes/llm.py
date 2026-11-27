@@ -1,4 +1,5 @@
 import dataclasses
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -36,6 +37,18 @@ def stage_responder(skills_dir: Path) -> Callable[[LlmRequest], LlmResponse]:
         fields = dict(part.split("=", 1) for part in request.messages[0]["content"].split())
         argv = ["fx", "set", f"work/{fields['feature']}", fields["ticket"], f"status={NEXT_STATUS[agent]}"]
         return tool_use("run_command", {"argv": argv})
+
+    return respond
+
+
+def blocking_build(skills_dir: Path, seconds: float) -> Callable[[LlmRequest], LlmResponse]:
+    """Build requests sleep `seconds` before answering; every request ends with `final()`."""
+    build_prompt = (skills_dir / "build" / "SKILL.md").read_text()
+
+    def respond(request: LlmRequest) -> LlmResponse:
+        if request.system == build_prompt:
+            time.sleep(seconds)
+        return final()
 
     return respond
 

@@ -1,8 +1,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
 
-from limo.agents.models import Run, ToolCall
+from limo.agents.models import Run, RunStatus, ToolCall
 from limo.store.db import connect
 
 
@@ -16,8 +15,8 @@ class RunRepo:
             conn.execute(
                 "INSERT INTO runs"
                 " (id, project_id, agent, feature, ticket, status, model, output, error,"
-                " created_at, finished_at, args, ticket_status, note)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " created_at, finished_at, args, ticket_status, note, attempt)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     run.id,
                     project_id,
@@ -33,6 +32,7 @@ class RunRepo:
                     run.args,
                     run.ticket_status,
                     run.note,
+                    run.attempt,
                 ),
             )
             conn.commit()
@@ -44,7 +44,8 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note,"
+                " r.attempt"
                 " FROM runs r JOIN projects p ON p.id = r.project_id WHERE r.id = ?",
                 (run_id,),
             ).fetchone()
@@ -57,7 +58,8 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note,"
+                " r.attempt"
                 " FROM runs r JOIN projects p ON p.id = r.project_id"
                 " WHERE r.project_id = ? AND r.feature = ? AND r.agent = ? AND r.args IS ?"
                 " ORDER BY r.created_at DESC LIMIT 1",
@@ -72,7 +74,8 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note,"
+                " r.attempt"
                 " FROM runs r JOIN projects p ON p.id = r.project_id"
                 " WHERE r.project_id = ? AND r.feature = ? AND r.ticket = ? AND r.agent != 'resolver'"
                 " ORDER BY r.created_at DESC LIMIT 1",
@@ -94,7 +97,7 @@ class RunRepo:
             conn.close()
         return [str(row["id"]) for row in rows]
 
-    def set_status(self, run_id: str, status: Literal["queued", "running", "succeeded", "failed"]) -> None:
+    def set_status(self, run_id: str, status: RunStatus) -> None:
         conn = connect(self._db_path)
         try:
             conn.execute("UPDATE runs SET status = ? WHERE id = ?", (status, run_id))
@@ -105,7 +108,7 @@ class RunRepo:
     def finish(
         self,
         run_id: str,
-        status: Literal["queued", "running", "succeeded", "failed"],
+        status: RunStatus,
         output: str | None,
         error: str | None,
     ) -> None:
@@ -115,6 +118,40 @@ class RunRepo:
                 "UPDATE runs SET status = ?, output = ?, error = ?, finished_at = ?"
                 " WHERE id = ? AND status IN ('queued', 'running')",
                 (status, output, error, datetime.now(UTC).isoformat(), run_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def count_attempts(self, project_id: str, feature: str, ticket: str | None, agent: str) -> int:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM runs"
+                " WHERE project_id = ? AND feature = ? AND ticket IS ? AND agent = ?",
+                (project_id, feature, ticket, agent),
+            ).fetchone()
+        finally:
+            conn.close()
+        return int(row[0])
+
+    def active_runs(self) -> list[tuple[str, str]]:
+        conn = connect(self._db_path)
+        try:
+            rows = conn.execute(
+                "SELECT id, project_id FROM runs WHERE status IN ('queued', 'running')"
+            ).fetchall()
+        finally:
+            conn.close()
+        return [(str(row["id"]), str(row["project_id"])) for row in rows]
+
+    def interrupt(self, run_id: str) -> None:
+        conn = connect(self._db_path)
+        try:
+            conn.execute(
+                "UPDATE runs SET status = 'interrupted', error = 'interrupted by restart', finished_at = ?"
+                " WHERE id = ? AND status IN ('queued', 'running')",
+                (datetime.now(UTC).isoformat(), run_id),
             )
             conn.commit()
         finally:

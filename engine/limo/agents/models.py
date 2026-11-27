@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from limo.cost.models import TokenCounts
 
+RunStatus = Literal["queued", "running", "succeeded", "failed", "interrupted"]
+
 
 class Agent(BaseModel):
     name: str
@@ -35,7 +37,7 @@ class Run(BaseModel):
     agent: str
     feature: str
     ticket: str | None
-    status: Literal["queued", "running", "succeeded", "failed"]
+    status: RunStatus
     model: str
     output: str | None
     error: str | None
@@ -46,6 +48,7 @@ class Run(BaseModel):
     args: str | None = None
     ticket_status: str | None = None
     note: str | None = None
+    attempt: int = 1
 
 
 class ToolCall(BaseModel):
