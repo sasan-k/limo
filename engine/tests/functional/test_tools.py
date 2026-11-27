@@ -105,3 +105,35 @@ def test_grep_results_are_capped_and_lines_shortened(
     assert len(lines) == 51
     assert all(len(line) <= len("notes.txt:60: ") + 200 for line in lines[:50])
     assert lines[-1] == "... 10 more matches; narrow the pattern or path"
+
+
+RANGE_PLAN = """# TKT-1
+
+## Context pack
+- `src/cart.py:2-2` — range inside the backticks
+- `src/payment.py`:1-1 — range after the backticks
+- `notes.txt:2-3,5-6` — several ranges inside the backticks
+
+## Steps
+"""
+
+
+def test_context_pack_line_ranges_inside_or_after_backticks(
+    client: TestClient, llm: FakeLlm, settings: Settings, tmp_path: Path
+) -> None:
+    """Build may read files whose pack entry has a range inside or after the backticks; several ranges
+    read as one span from the first start to the last end."""
+    add_cart_project(client, tmp_path)
+    write_workspace_file(settings, "shop", "work/cart/plans/TKT-1.md", RANGE_PLAN)
+    write_workspace_file(settings, "shop", "notes.txt", "".join(f"line {n}\n" for n in range(1, 9)))
+    llm.script = [
+        tool_use("read_file", {"path": "src/cart.py"}, "tu_1"),
+        tool_use("read_file", {"path": "src/payment.py"}, "tu_2"),
+        tool_use("read_file", {"path": "notes.txt"}, "tu_3"),
+    ]
+    start_and_wait(client, "build")
+    results = [r.messages[-1]["content"][0] for r in llm.requests[1:4]]
+    assert [r["is_error"] for r in results] == [False, False, False]
+    assert results[0]["content"] == "    return 0\n"
+    assert results[1]["content"] == "SECRET = 1\n"
+    assert results[2]["content"] == "line 2\nline 3\nline 4\nline 5\nline 6\n"
