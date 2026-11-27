@@ -13,6 +13,8 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/agents` — prompt registry, run service (tool loop, background worker), per-agent tools → `llm`, `executor` (call)
 - `engine/limo/llm` — LLM port + Anthropic adapter → Claude Messages API (HTTPS)
 - `engine/limo/runner` — step: dispatch by ticket status read via `fx` (one run at a time) → `agents` (call), `executor` (fx)
+- `engine/limo/budget` — default + per-ticket/agent budgets, spend check after each Claude API call → `cost` (usage sums)
+- `engine/limo/inbox` — holds: tickets waiting for a human (budget now) → `store`
 - `engine/limo/cost` — prices, per-call usage, run cost, project totals → `store` (file)
 - `engine/limo/resolver` — incident bundle, action validation/apply → `agents`, `store`, `hosts` (call)
 - `engine/limo/hosts` — RepoHost port; GitLab + GitHub adapters → host REST APIs (HTTPS)

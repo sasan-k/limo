@@ -16,6 +16,7 @@
 | Executor | Runs commands in a workspace | `Executor` | Runner |
 | Feature | A unit of requirements with its own `work/<feature>/` | `feature` | Ticket |
 | Fix pass | Plan appends fix steps after review; Build runs only those | `fix_pass` | Re-plan |
+| Hold | A ticket waiting for a human (budget now; escalations later); the runner skips it until Continue | `Hold` | Incident |
 | Inbox | UI list of escalated tickets waiting for a human | `Inbox` | Board |
 | Incident | A stuck event on a ticket, with its bundle file | `Incident` | Escalation |
 | Intake form | UI form where a user pastes a feature's requirements | `IntakeForm` | Inbox |

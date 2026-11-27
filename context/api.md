@@ -35,5 +35,7 @@
 - agents: `engine/limo/api/agents_routes.py` (`GET /api/agents`, `PUT /api/agents/{name}/model`)
 - cost: `engine/limo/api/cost_routes.py` (`PUT/GET /api/prices`, `GET /api/projects/{name}/costs`)
 - runner step: `engine/limo/api/runner_routes.py` (`POST /api/projects/{name}/features/{feature}/step`)
+- budgets: `engine/limo/api/budget_routes.py` (`GET/PUT /api/budgets/defaults`, `GET/PUT /api/projects/{name}/features/{feature}/tickets/{ticket}/budget`)
+- inbox: `engine/limo/api/inbox_routes.py` (`GET /api/inbox`, `POST /api/inbox/{id}/continue` → runner step)
 - runs: `engine/limo/api/runs_routes.py` (`POST /api/projects/{name}/runs`, `GET /api/runs/{id}`, `GET /api/runs/{id}/tool-calls`)
 - SSE: (planned) `engine/limo/api/events.py`

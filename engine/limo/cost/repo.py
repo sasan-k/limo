@@ -131,3 +131,27 @@ class UsageRepo:
         finally:
             conn.close()
         return [(row[0], row[1], row[2]) for row in rows]
+
+    def ticket_spent(self, project_id: str, feature: str, ticket: str) -> int:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute(
+                "SELECT COALESCE(SUM(cost_micros), 0) FROM usage"
+                " WHERE project_id = ? AND feature = ? AND ticket = ?",
+                (project_id, feature, ticket),
+            ).fetchone()
+        finally:
+            conn.close()
+        return int(row[0])
+
+    def agent_spent(self, project_id: str, feature: str, ticket: str) -> dict[str, int]:
+        conn = connect(self._db_path)
+        try:
+            rows = conn.execute(
+                "SELECT agent, COALESCE(SUM(cost_micros), 0) FROM usage"
+                " WHERE project_id = ? AND feature = ? AND ticket = ? GROUP BY agent",
+                (project_id, feature, ticket),
+            ).fetchall()
+        finally:
+            conn.close()
+        return {str(r[0]): int(r[1]) for r in rows}

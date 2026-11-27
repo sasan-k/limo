@@ -11,7 +11,8 @@ Follow the plan exactly. You do not design, explore, or improve.
 - `work/<feature>/plans/TKT-n.md`
 - Only the files listed in its **Context pack**:
   - file a step edits → read the whole file
-  - file only imitated (`like:`) → read only its line range
+  - file only imitated (`like:`) → read only its line range; no range given → read the whole file
+  - file marked `read` → read it whole; it may show routes, helpers and signatures your steps need
 - `context/INDEX.md` → **Commands** section only
 
 ## Output
