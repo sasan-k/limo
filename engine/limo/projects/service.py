@@ -32,6 +32,7 @@ class ProjectService:
             raise self._fail_clone(path) from e
         if result.code != 0:
             raise self._fail_clone(path)
+        self._exclude_work(path)
         try:
             branch = self._executor.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path, self._timeout_s)
         except ExecutorError as e:
@@ -50,6 +51,16 @@ class ProjectService:
         )
         self._repo.insert(project)
         return project
+
+    def _exclude_work(self, path: Path) -> None:
+        exclude = path / ".git" / "info" / "exclude"
+        exclude.parent.mkdir(parents=True, exist_ok=True)
+        current = exclude.read_text() if exclude.is_file() else ""
+        if "work/" in current.splitlines():
+            return
+        if current and not current.endswith("\n"):
+            current += "\n"
+        exclude.write_text(current + "work/\n")
 
     def _fail_clone(self, path: Path) -> ExternalError:
         shutil.rmtree(path, ignore_errors=True)

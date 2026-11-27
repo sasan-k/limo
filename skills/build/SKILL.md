@@ -13,6 +13,7 @@ Follow the plan exactly. You do not design, explore, or improve.
   - file a step edits → read the whole file
   - file only imitated (`like:`) → read only its line range; no range given → read the whole file
   - file marked `read` → read it whole; it may show routes, helpers and signatures your steps need
+  - files any step of this plan creates or edits (`file:` lines) are always yours to read and fix
 - `context/INDEX.md` → **Commands** section only
 
 ## Output

@@ -16,8 +16,8 @@ class RunRepo:
             conn.execute(
                 "INSERT INTO runs"
                 " (id, project_id, agent, feature, ticket, status, model, output, error,"
-                " created_at, finished_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " created_at, finished_at, args)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     run.id,
                     project_id,
@@ -30,6 +30,7 @@ class RunRepo:
                     run.error,
                     run.created_at,
                     run.finished_at,
+                    run.args,
                 ),
             )
             conn.commit()
@@ -41,9 +42,24 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at"
+                " r.output, r.error, r.created_at, r.finished_at, r.args"
                 " FROM runs r JOIN projects p ON p.id = r.project_id WHERE r.id = ?",
                 (run_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        return None if row is None else Run(**dict(row))
+
+    def latest(self, project_id: str, feature: str, agent: str, args: str | None) -> Run | None:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute(
+                "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
+                " r.output, r.error, r.created_at, r.finished_at, r.args"
+                " FROM runs r JOIN projects p ON p.id = r.project_id"
+                " WHERE r.project_id = ? AND r.feature = ? AND r.agent = ? AND r.args IS ?"
+                " ORDER BY r.created_at DESC LIMIT 1",
+                (project_id, feature, agent, args),
             ).fetchone()
         finally:
             conn.close()

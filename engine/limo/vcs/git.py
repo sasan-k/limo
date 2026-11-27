@@ -35,9 +35,10 @@ class GitOps:
             raise GitError(checkout.stderr)
 
     def commit_and_push(self, workspace: Path, branch: str, message: str) -> None:
-        added = self._git(workspace, "add", "-A", "--", ".", ":(exclude)work")
+        added = self._git(workspace, "add", "-A")
         if added.code != 0:
             raise GitError(added.stderr)
+        self._git(workspace, "reset", "-q", "--", "work")
         committed = self._git(
             workspace, "-c", "user.name=Limo", "-c", "user.email=limo@localhost", "commit", "-m", message
         )

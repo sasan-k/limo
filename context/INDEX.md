@@ -15,6 +15,7 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/runner` — step: ship `review` tickets, else dispatch by ticket status via `fx` (one run at a time); poll merge requests → `agents`, `hosts`, `vcs`, `executor` (fx)
 - `engine/limo/hosts` — RepoHost port (open MR, auto-merge, status; no merge), `UnconfiguredHost` default, `merge_requests` repo
 - `engine/limo/vcs` — git via executor: ticket branches `limo/<feature>/<ticket>`, commit (never `work/`), push
+- `engine/limo/features` — intake (requirements saved to `work/<f>/requirements/`), phases architecture → spec → nfr → tickets driven by the runner
 - `engine/limo/budget` — default + per-ticket/agent budgets, spend check after each Claude API call → `cost` (usage sums)
 - `engine/limo/inbox` — holds: tickets waiting for a human (budget now) → `store`
 - `engine/limo/cost` — prices, per-call usage, run cost, project totals → `store` (file)

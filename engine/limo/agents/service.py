@@ -65,10 +65,14 @@ class RunService:
             error=None,
             created_at=datetime.now(UTC).isoformat(),
             finished_at=None,
+            args=data.args,
         )
         self._stores.runs.insert(run, project.id)
         self._pool.submit(self._execute, run.id)
         return run
+
+    def latest(self, project_id: str, feature: str, agent: str, args: str | None) -> Run | None:
+        return self._stores.runs.latest(project_id, feature, agent, args)
 
     def get(self, run_id: str) -> Run:
         run = self._stores.runs.get(run_id)
@@ -116,7 +120,11 @@ class RunService:
 
     def _loop(self, run: Run, ctx: ToolContext, ref: CallRef) -> None:
         system = (self._config.skills_dir / run.agent / "SKILL.md").read_text()
-        task = f"feature={run.feature} ticket={run.ticket}" if run.ticket else f"feature={run.feature}"
+        task = f"feature={run.feature}"
+        if run.ticket:
+            task += f" ticket={run.ticket}"
+        if run.args:
+            task += f" {run.args}"
         messages: list[dict[str, Any]] = [{"role": "user", "content": task}]
         seq = 0
         call_no = 0

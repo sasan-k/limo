@@ -24,6 +24,7 @@ class RunIn(BaseModel):
     agent: Literal["architecture", "spec", "plan", "build", "verify", "close", "resolver"]
     feature: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,39}$")
     ticket: str | None = Field(default=None, pattern=r"^TKT-\d+$")
+    args: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9 =-]{0,79}$")
 
 
 class Run(BaseModel):
@@ -40,6 +41,7 @@ class Run(BaseModel):
     finished_at: str | None
     tokens: TokenCounts | None = None
     cost: str | None = None
+    args: str | None = None
 
 
 class ToolCall(BaseModel):
