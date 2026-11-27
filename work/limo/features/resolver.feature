@@ -82,3 +82,10 @@ Feature: Resolver
     When the user types "Yes, 21% VAT" for "TKT-1" in the inbox and presses Continue
     Then the issue of "TKT-1" has a comment "Yes, 21% VAT"
     And a resolver run starts for "TKT-1" whose incident bundle contains "Yes, 21% VAT"
+
+  @SC-62 @REQ-55
+  Scenario: A plan-detail action re-plans the ticket with the fix note
+    Given an incident is open for "TKT-1" after its build stopped on a plan gap
+    When the resolver run returns action replan with fix "define IssueRef before the fake host step"
+    Then the next run for "TKT-1" is a plan run whose task includes "define IssueRef before the fake host step"
+    And a second replan action for "TKT-1" escalates instead

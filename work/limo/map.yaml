@@ -45,7 +45,7 @@ tickets:
   - id: TKT-9
     title: Stuck tickets get a resolver run whose allowlisted action is applied
     scope: [runner, agents, host]
-    scenarios: [SC-32, SC-33, SC-34, SC-35, SC-36]
+    scenarios: [SC-32, SC-33, SC-34, SC-35, SC-36, SC-62]
     depends_on: [TKT-8]
   - id: TKT-10
     title: Escalations reach a human and replies come back

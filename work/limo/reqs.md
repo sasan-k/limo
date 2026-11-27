@@ -56,3 +56,4 @@
 - REQ-52 [F] A price change applies only to new usage; past costs never change — src: `questions.md#Q-7`
 - REQ-53 [F] `work/<feature>/` stays local to Limo: never committed or pushed, and never part of a merge request — src: `questions.md#Q-10`
 - REQ-54 [F] Limo calls the GitHub and GitLab REST APIs with its own identity token; a separate human approver approves merge requests — src: `questions.md#Q-14`
+- REQ-55 [F] The resolver may send a ticket back to Plan with an exact plan-detail fix (step order, missing path/name/type; no design change), at most once per ticket — src: user 2026-11-26

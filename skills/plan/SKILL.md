@@ -36,6 +36,7 @@ Review (`work/<feature>/reports/TKT-n-review-<k>.md` newer than the plan):
 - Every applicable Quality item that is testable (authz, validation, limits) has a matrix cell test.
 - Functional tests: follow testing.md; each scenario and non-n/a cell covered; name contains FT id.
 - Test steps spell out how to read each result (exact JSON paths, e.g. the error envelope).
+- Every endpoint or helper a test uses in Given/When is named with its path or module (or its file is in the pack).
 
 ## Rules — steps
 - Context pack: every file a step edits or imitates (line ranges for imitated). Nothing else.

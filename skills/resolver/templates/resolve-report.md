@@ -2,7 +2,7 @@
 ticket: TKT-<n>
 incident: <k>
 trigger: <blocked | no-transition | crash | timeout | limits | question>
-diagnosis: <transient | no-transition | answerable | underspecified | other>
+diagnosis: <transient | no-transition | answerable | underspecified | plan-detail | other>
 confidence: <high | low>
 ---
 # Resolve report TKT-<n> #<k>
@@ -21,4 +21,5 @@ confidence: <high | low>
 ```
 <!-- or {"type": "answer", "question": "Q-<n>", "answer": "<one line>", "source": "<evidence>"}
      or {"type": "edit-ticket", "title": "<one line>", "source": "<evidence>"}
+     or {"type": "replan", "fix": "<exact plan correction, ≤ 3 lines>", "source": "<evidence>"}
      or {"type": "escalate", "summary": "<≤ 3 lines>", "ask": "<one question for a human>"} -->

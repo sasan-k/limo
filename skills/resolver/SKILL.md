@@ -21,6 +21,7 @@ You unblock tickets. You never write code, tests, plans, scenarios or ADRs. The 
    | no-transition | stage finished its work (report shows success) but did not set status | `retry` |
    | answerable | blocking question whose answer is stated in code, `context/`, an ADR, or a human reply on the issue | `answer` |
    | underspecified | ticket title misleads; scenarios or a human reply make the intent explicit | `edit-ticket` |
+   | plan-detail | build stopped on a plan gap with no design change: step order, a missing path/route/name/type, a missing context-pack file | `replan` |
    | other | anything else: environment, repeated identical failure, real design or spec problem | `escalate` |
 3. Confidence is `high` only if: diagnosis is not `other`, every claim has evidence, and nothing contradicts it.
    Not `high` → `escalate`.
@@ -31,6 +32,7 @@ You unblock tickets. You never write code, tests, plans, scenarios or ADRs. The 
 - `retry` — `stage`: the stage to rerun. Never twice for the same error text.
 - `answer` — `question`: Q-n, `answer`: one line, `source`: evidence. Runner writes it to questions.md and unblocks.
 - `edit-ticket` — `title`: new one-line title, `source`: evidence. Runner updates map.yaml + issue, then re-plans.
+- `replan` — `fix`: the exact plan correction (≤ 3 lines), `source`: evidence. Runner sends the ticket to Plan with this note; at most once per ticket.
 - `escalate` — `summary`: what is stuck and why (≤ 3 lines), `ask`: the one question a human must answer.
 
 ## Rules
