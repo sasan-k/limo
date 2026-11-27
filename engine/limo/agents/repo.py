@@ -16,8 +16,8 @@ class RunRepo:
             conn.execute(
                 "INSERT INTO runs"
                 " (id, project_id, agent, feature, ticket, status, model, output, error,"
-                " created_at, finished_at, args)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " created_at, finished_at, args, ticket_status)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     run.id,
                     project_id,
@@ -31,6 +31,7 @@ class RunRepo:
                     run.created_at,
                     run.finished_at,
                     run.args,
+                    run.ticket_status,
                 ),
             )
             conn.commit()
@@ -42,7 +43,7 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at, r.args"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status"
                 " FROM runs r JOIN projects p ON p.id = r.project_id WHERE r.id = ?",
                 (run_id,),
             ).fetchone()
@@ -55,7 +56,7 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at, r.args"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status"
                 " FROM runs r JOIN projects p ON p.id = r.project_id"
                 " WHERE r.project_id = ? AND r.feature = ? AND r.agent = ? AND r.args IS ?"
                 " ORDER BY r.created_at DESC LIMIT 1",
@@ -64,6 +65,33 @@ class RunRepo:
         finally:
             conn.close()
         return None if row is None else Run(**dict(row))
+
+    def latest_for_ticket(self, project_id: str, feature: str, ticket: str) -> Run | None:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute(
+                "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status"
+                " FROM runs r JOIN projects p ON p.id = r.project_id"
+                " WHERE r.project_id = ? AND r.feature = ? AND r.ticket = ? AND r.agent != 'resolver'"
+                " ORDER BY r.created_at DESC LIMIT 1",
+                (project_id, feature, ticket),
+            ).fetchone()
+        finally:
+            conn.close()
+        return None if row is None else Run(**dict(row))
+
+    def active_older_than(self, project_id: str, cutoff_iso: str) -> list[str]:
+        conn = connect(self._db_path)
+        try:
+            rows = conn.execute(
+                "SELECT id FROM runs WHERE project_id = ? AND status IN ('queued', 'running')"
+                " AND created_at < ?",
+                (project_id, cutoff_iso),
+            ).fetchall()
+        finally:
+            conn.close()
+        return [str(row["id"]) for row in rows]
 
     def set_status(self, run_id: str, status: Literal["queued", "running", "succeeded", "failed"]) -> None:
         conn = connect(self._db_path)
@@ -83,7 +111,8 @@ class RunRepo:
         conn = connect(self._db_path)
         try:
             conn.execute(
-                "UPDATE runs SET status = ?, output = ?, error = ?, finished_at = ? WHERE id = ?",
+                "UPDATE runs SET status = ?, output = ?, error = ?, finished_at = ?"
+                " WHERE id = ? AND status IN ('queued', 'running')",
                 (status, output, error, datetime.now(UTC).isoformat(), run_id),
             )
             conn.commit()

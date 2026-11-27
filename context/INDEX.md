@@ -16,6 +16,7 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/hosts` — RepoHost port (open MR, auto-merge, status; issues with label `limo:<status>`; no merge), `UnconfiguredHost` default, `merge_requests` + `issues` repos; issue sync runs on each step
 - `engine/limo/vcs` — git via executor: ticket branches `limo/<feature>/<ticket>`, commit (never `work/`), push
 - `engine/limo/features` — intake (requirements saved to `work/<f>/requirements/`), phases architecture → spec → nfr → tickets driven by the runner
+- `engine/limo/incidents` — stuck detection (question, blocked, timeout, crash, no-transition), bundles in `work/<f>/incidents/`, resolver run, action parsing; `retry` applied (others → `needs_human` until TKT-19)
 - `engine/limo/budget` — default + per-ticket/agent budgets, spend check after each Claude API call → `cost` (usage sums)
 - `engine/limo/inbox` — holds: tickets waiting for a human (budget now) → `store`
 - `engine/limo/cost` — prices, per-call usage, run cost, project totals → `store` (file)
@@ -24,7 +25,7 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/executor` — runs commands in a workspace via `mise exec` (subprocess)
 - `engine/limo/store` — SQLite; `fx` owns the `tickets` table (file)
 - `ui` — React SPA → `engine/limo/api` via REST + SSE
-real GitHub/GitLab adapters (TKT-18), `resolver` and `ui` are (planned); see layout.md.
+real GitHub/GitLab adapters (TKT-18), remaining resolver actions (TKT-19) and `ui` are (planned); see layout.md.
 
 ## Stack
 Python 3.12 · FastAPI · SQLite · Anthropic SDK · React + TypeScript + Vite + Tailwind + shadcn/ui · mise — details: stack.md

@@ -38,5 +38,6 @@
 - budgets: `engine/limo/api/budget_routes.py` (`GET/PUT /api/budgets/defaults`, `GET/PUT /api/projects/{name}/features/{feature}/tickets/{ticket}/budget`)
 - inbox: `engine/limo/api/inbox_routes.py` (`GET /api/inbox`, `POST /api/inbox/{id}/continue` → runner step)
 - features: `engine/limo/api/features_routes.py` (`POST/GET /api/projects/{name}/features`); step reason `stage_failed`; runs carry `args` (e.g. `mode=init-existing`)
+- incidents: `engine/limo/api/incidents_routes.py` (`GET …/features/{feature}/incidents`); step reasons `resolving`, `resolved`, `needs_human`
 - runs: `engine/limo/api/runs_routes.py` (`POST /api/projects/{name}/runs`, `GET /api/runs/{id}`, `GET /api/runs/{id}/tool-calls`)
 - SSE: (planned) `engine/limo/api/events.py`
