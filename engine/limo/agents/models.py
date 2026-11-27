@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from limo.cost.models import TokenCounts
+
 
 class Agent(BaseModel):
     name: str
@@ -36,6 +38,8 @@ class Run(BaseModel):
     error: str | None
     created_at: str
     finished_at: str | None
+    tokens: TokenCounts | None = None
+    cost: str | None = None
 
 
 class ToolCall(BaseModel):
