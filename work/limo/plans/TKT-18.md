@@ -3,8 +3,8 @@ ticket: TKT-18
 feature: limo
 scenarios: [SC-60, SC-61]
 scope: [host, testing]
-revision: 0
-run: all
+revision: 1
+run: from-STEP-4
 read: [work/limo/map.yaml, work/limo/features/host_adapters.feature, work/limo/questions.md#Q-13#Q-14, context/adr/ADR-12.md, context/adr/ADR-9.md, context/security.md, context/performance.md, context/testing.md, engine/limo/hosts/ports.py, engine/limo/config.py, engine/limo/app.py (3 uses of UnconfiguredHost), engine/pyproject.toml]
 ---
 # TKT-18: GitHub and GitLab adapters act as Limo's identity
@@ -106,22 +106,22 @@ Contract tests (ADR-12) in `engine/tests/contract/test_repo_hosts.py`; `engine/t
 ### STEP-4 repo url parser
 - file: `engine/limo/hosts/repo_url.py` (create)
 - do: `parse_repo(git_url: str) -> str` per Design (regexes for the three forms; strip a trailing `.git`; require exactly `owner/repo` or deeper GitLab groups `a/b/c`)
-- verify: `mise run test:engine -- -k ft_18_9` → passed
+- verify: `cd engine && uv run python -c "from limo.hosts.repo_url import parse_repo; print(parse_repo('git@example.com:acme/shop.git'))"` → `acme/shop` (the contract tests run after STEP-7)
 
 ### STEP-5 GitHub adapter
 - file: `engine/limo/hosts/github.py` (create)
 - do: `GitHubHost` per the table. One private `_request(method, path, json_body=None) -> Any` builds headers, sends via `self._client` (`httpx.Client(base_url=api_url, timeout=timeout_s)` unless one is passed), raises `HostError` per Design, returns `response.json()` (or `None` for 204). `_me()` caches `GET /user` `login`. Each public method ≤ 40 lines.
-- verify: `mise run test:engine -- -k "ft_18 and github"` → github cases pass
+- verify: `cd engine && uv run python -c "import limo.hosts.github"` → exit 0
 
 ### STEP-6 GitLab adapter
 - file: `engine/limo/hosts/gitlab.py` (create)
 - do: `GitLabHost` per the table; project path = `urllib.parse.quote(parse_repo(url), safe="")`; `_me()` caches `GET /user` `username`; same `_request` pattern as GitHub (no shared base class unless jscpd reports a clone — then extract `limo/hosts/http.py` with the shared `_request`/error handling)
-- verify: `mise run test:engine -- -k "ft_18 and gitlab"` → gitlab cases pass
+- verify: `cd engine && uv run python -c "import limo.hosts.gitlab"` → exit 0
 
 ### STEP-7 router
 - file: `engine/limo/hosts/router.py` (create)
 - do: `RoutedHost(github: RepoHost, gitlab: RepoHost)`; each port method → `self._pick(project).<same method>(...)`; `_pick` raises `HostError("unknown repo host")` for other kinds
-- verify: `mise run test:engine -- -k ft_18_10` → passed
+- verify: `mise run test:engine -- -k ft_18` → all FT-18 cases pass (first full run of the contract suite)
 
 ### STEP-8 default host wiring
 - file: `engine/limo/app.py` (edit)

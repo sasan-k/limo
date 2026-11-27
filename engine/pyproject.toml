@@ -2,10 +2,10 @@
 name = "limo"
 version = "0.1.0"
 requires-python = ">=3.12,<3.13"
-dependencies = ["fastapi", "uvicorn", "pydantic-settings", "anthropic"]
+dependencies = ["fastapi", "uvicorn", "pydantic-settings", "anthropic", "httpx"]
 
 [dependency-groups]
-dev = ["pytest", "httpx", "ruff", "mypy", "import-linter"]
+dev = ["pytest", "httpx", "respx", "ruff", "mypy", "import-linter"]
 
 [build-system]
 requires = ["hatchling"]
