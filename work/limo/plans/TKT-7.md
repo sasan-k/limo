@@ -3,8 +3,8 @@ ticket: TKT-7
 feature: limo
 scenarios: [SC-24, SC-25, SC-26, SC-27, SC-28, SC-29]
 scope: [host, runner]
-revision: 0
-run: all
+revision: 3  # human-approved after resolver escalation (TKT-7-resolve-2)
+run: from-STEP-16
 read: [work/limo/map.yaml, work/limo/features/host.feature, work/limo/questions.md#Q-13#Q-14, DESIGN.md#Orchestration, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/api.md, context/data.md, context/layout.md, ADR-4:L2, ADR-9:L2, ADR-10:L2, ADR-12:L2, engine/limo/runner/*.py, engine/limo/app.py, engine/tests/builders.py, engine/tests/conftest.py, engine/tests/fakes/llm.py]
 ---
 # TKT-7: Each ticket ships as an auto-merge merge request and finishes on merge
@@ -92,6 +92,10 @@ All in `engine/tests/functional/test_shipping.py`. Fixture `host` (STEP-2) is th
 - `engine/limo/inbox/repo.py` — like: repository pattern
 - `engine/tests/conftest.py`, `engine/tests/builders.py` — STEP-2 edit
 - `engine/tests/fakes/llm.py` — read (`stage_responder`)
+- `engine/tests/functional/test_runner.py`:57-100 — STEP-12 edit
+- `engine/limo/runner/shipping.py` — STEP-14 edit
+- `engine/limo/vcs/git.py` — read (`start_ticket`)
+- `engine/limo/hosts/repo.py` — STEP-16 edit
 
 ## Steps
 ### STEP-1 RepoHost port and default adapter
@@ -171,6 +175,49 @@ CREATE INDEX merge_requests_feature ON merge_requests (project_id, feature, stat
 - verify: `mise run test:engine` → all pass (73 + 14 FT-7)
 
 ### STEP-11 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` → 87 passed
+
+### STEP-12 update TKT-5 runner tests for shipping (revision 1: verify r0)
+- file: `engine/tests/functional/test_runner.py` (edit)
+- do:
+  - FT-5.3: replace the last line `assert r.json()["reason"] == "no_ready_ticket"` with these lines (TKT-1 in review now ships once, then nothing starts):
+```python
+    assert r.json()["reason"] == "shipped"
+    again = post_step(client)
+    assert again.json()["run"] is None
+    assert again.json()["reason"] == "no_ready_ticket"
+```
+  - FT-5.4: inside the loop, right after the `if first["reason"] == "no_ready_ticket": break` block, add:
+```python
+        if first["reason"] == "shipped":
+            continue
+```
+  - change nothing else; the 12-iteration limit becomes 16 (`for _ in range(16):`) because each ticket now adds one ship step
+- verify: `mise run test:engine` → 87 passed
+
+### STEP-13 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` → 87 passed
+
+### STEP-14 ship checks out the ticket branch first (revision 2: resolver escalation, human-approved)
+- file: `engine/limo/runner/shipping.py` (edit)
+- do: in `ship`, inside the existing `try` and before `commit_and_push`, add `self._git.start_ticket(Path(project.workspace), branch, project.default_branch)`; change nothing else
+- verify: `mise run test:engine` → 87 passed
+
+### STEP-15 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` → 87 passed
+
+### STEP-16 type the row mapper (revision 3)
+- file: `engine/limo/hosts/repo.py` (edit)
+- do: change `def _record(row)` to `def _record(row: sqlite3.Row) -> MrRecord` (add `import sqlite3` if missing)
+- verify: `mise run types` → `Success`
+
+### STEP-17 format, gates, full suite
 - file: none new (edit only lines a gate reports, in files this plan created or edited)
 - do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
 - verify: gates exit 0; `mise run test` → 87 passed
