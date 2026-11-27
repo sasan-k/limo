@@ -9,7 +9,8 @@ from limo.executor.ports import Executor, ExecutorError
 
 MAX_TEXT = 20_000
 MAX_LIST = 200
-MAX_MATCHES = 100
+MAX_MATCHES = 50
+MAX_LINE = 200  # chars per grep match line; results stay in the agent's context every later turn
 MAX_WRITE = 1_000_000
 MAX_STDERR = 2_000
 
@@ -109,7 +110,7 @@ def _grep_lines(file: Path, base: Path, regex: re.Pattern[str]) -> list[str]:
     except UnicodeDecodeError:
         return []
     name = file.relative_to(base).as_posix()
-    return [f"{name}:{n}: {line}" for n, line in enumerate(lines, 1) if regex.search(line)]
+    return [f"{name}:{n}: {line[:MAX_LINE]}" for n, line in enumerate(lines, 1) if regex.search(line)]
 
 
 class ToolBox:
@@ -181,7 +182,10 @@ class ToolBox:
         for file in files:
             if file.is_file() and ".git" not in file.relative_to(base).parts:
                 matches.extend(_grep_lines(file, base, regex))
-        return ToolOutcome("\n".join(matches[:MAX_MATCHES]), "ok", pattern)
+        shown = matches[:MAX_MATCHES]
+        if len(matches) > MAX_MATCHES:
+            shown.append(f"... {len(matches) - MAX_MATCHES} more matches; narrow the pattern or path")
+        return ToolOutcome("\n".join(shown), "ok", pattern)
 
     def _read_ref(self, ctx: ToolContext, tool_input: dict[str, Any]) -> ToolOutcome:
         rel = _str(tool_input, "path")

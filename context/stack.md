@@ -18,7 +18,7 @@
 |---|---|---|
 | http + SSE | fastapi, uvicorn | SSE via `StreamingResponse` `text/event-stream` |
 | validation | pydantic v2 | request/response models, config |
-| LLM | local `claude` CLI (Claude Code, user login) | default backend `claude-cli`, `claude -p` + stream-json; ADR-14 |
+| LLM | local `claude` CLI (Claude Code, user login) | default backend `claude-cli`, `claude -p` + stream-json; ADR-14; default models (`agent_models`): build Haiku, spec/verify/close Sonnet, others `default_model` (Opus); UI/API overrides win |
 | LLM (alt) | anthropic (Python SDK) | backend `api`: Messages API, streaming; ADR-6 |
 | repo hosts | httpx (runtime) | GitLab REST v4 + GitHub REST/GraphQL; no vendor SDKs; tests use respx |
 | db | sqlite3 (stdlib) | plain SQL, no ORM (ADR-3) |

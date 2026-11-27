@@ -10,6 +10,8 @@ argument-hint: <feature> TKT-n [abandon]
 - All `work/<feature>/reports/TKT-n-build-*.md` → union of **Files changed** (the diff scope; retries add files)
 - Those files' changes: `git diff -- <files>` if the project uses git, else read the files
 - Only the `context/` files named in section 6
+- Tools: issue independent reads, lists and searches together in one turn; read line ranges when you
+  know where to look. Every tool result stays in your context for every later turn.
 
 ## Steps — ship (ticket status `verified`)
 1. For each doc-update line: compare with the actual code. Code wins; note differences as drift.

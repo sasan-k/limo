@@ -9,6 +9,9 @@ argument-hint: <feature> [requirement files…]
 - requirement files (args) — copy into `work/<feature>/requirements/` if not there
 - `context/INDEX.md`, `context/glossary.md` (always) · `context/adr/INDEX.md` (L1 only)
 - re-run: existing `work/<feature>/` files — change only what the new requirements affect
+- Tools: issue independent reads, lists and searches together in one turn; read line ranges when you
+  know where to look. Every tool result stays in your context for every later turn.
+- Read only these inputs; never search or read code (Plan does that).
 
 ## Output — `work/<feature>/` (templates in this skill dir: `templates/`)
 `reqs.md` · `features/*.feature` · `nfr.md` · `questions.md` · `map.yaml` · updates to `context/glossary.md`

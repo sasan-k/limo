@@ -10,6 +10,8 @@ argument-hint: <feature> TKT-n
 - `work/<feature>/plans/TKT-n.md` — Design, Quality, Functional tests, Steps
 - Latest `work/<feature>/reports/TKT-n-build-*.md` (result, Files changed)
 - Review only: `context/code-rules.md`, `context/security.md`; diff of Files changed (`git diff -- <files>` or read them)
+- Tools: issue independent reads, lists and searches together in one turn; read line ranges when you
+  know where to look. Every tool result stays in your context for every later turn.
 
 ## Steps
 1. Build report `stopped` → skip to 6 with it as the failure.

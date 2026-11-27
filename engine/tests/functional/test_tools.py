@@ -3,7 +3,8 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from tests.builders import add_cart_project, start_and_wait
+from limo.config import Settings
+from tests.builders import add_cart_project, start_and_wait, write_workspace_file
 from tests.fakes.llm import FakeLlm, tool_use
 
 
@@ -90,3 +91,17 @@ def test_ft_2_13_failing_command_is_an_error(client: TestClient, llm: FakeLlm, t
     result = _first_tool_result(llm)
     assert result["is_error"] is True
     assert result["content"].startswith("command failed (exit 1)")
+
+
+def test_grep_results_are_capped_and_lines_shortened(
+    client: TestClient, llm: FakeLlm, settings: Settings, tmp_path: Path
+) -> None:
+    """grep returns at most 50 matches, each line cut to 200 chars, plus a note on how many were left out."""
+    add_cart_project(client, tmp_path)
+    write_workspace_file(settings, "shop", "notes.txt", "".join(f"match {'x' * 300}\n" for _ in range(60)))
+    llm.script = [tool_use("grep", {"pattern": "^match", "path": "notes.txt"})]
+    start_and_wait(client, "plan")
+    lines = _first_tool_result(llm)["content"].splitlines()
+    assert len(lines) == 51
+    assert all(len(line) <= len("notes.txt:60: ") + 200 for line in lines[:50])
+    assert lines[-1] == "... 10 more matches; narrow the pattern or path"

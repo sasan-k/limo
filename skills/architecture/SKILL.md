@@ -6,6 +6,8 @@ argument-hint: init-existing | init-new | refresh | nfr <feature>
 # Architecture (stage 0)
 
 Produce a small, accurate snapshot of the project in `context/` so planners start with the right map.
+- Tools: issue independent reads, lists and searches together in one turn; read line ranges when you
+  know where to look. Every tool result stays in your context for every later turn.
 
 ## Output (target project)
 `context/INDEX.md stack.md layout.md api.md code-rules.md security.md performance.md data.md testing.md glossary.md adr/INDEX.md adr/ADR-n.md`

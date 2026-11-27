@@ -50,7 +50,7 @@ class RunStores:
 @dataclass(frozen=True)
 class RunConfig:
     skills_dir: Path
-    model: str
+    models: dict[str, str]  # default model per agent
     max_turns: int
     fx_db: Path
     backend: str = "api"
@@ -83,7 +83,7 @@ class RunService:
         project = self._stores.projects.get_by_name(project_name)
         if project is None:
             raise NotFound("project_not_found", f"project {project_name} not found")
-        model = self._stores.agent_settings.get(data.agent) or self._config.model
+        model = self._stores.agent_settings.get(data.agent) or self._config.models[data.agent]
         attempt = self._stores.runs.count_attempts(project.id, data.feature, data.ticket, data.agent) + 1
         run = Run(
             id=uuid4().hex,
