@@ -8,6 +8,7 @@ usage:
   fx.py status      <work/feature> [TKT-n]         print status + tries per ticket
   fx.py set         <work/feature> TKT-n key=value…  set status / build_tries / plan_tries (inc: key=+1)
   fx.py ready       <work/feature>                 list tickets ready to plan (status todo, deps done)
+  fx.py tickets    <work/feature>                 print id<TAB>title per ticket
   fx.py adr         <context dir> ADR-n <status>   flip ADR status in ADR file and adr/INDEX.md
 Ticket definitions live in map.yaml; status + tries live in SQLite at $FX_DB
 (default <project>/.factory/state.db). Tickets missing from the DB start as todo, 0, 0.
@@ -200,6 +201,12 @@ def cmd_ready(work):
     print("ready:", " ".join(ready) or "-")
 
 
+def cmd_tickets(work):
+    _, tickets = load_map(work)
+    for t in tickets:
+        print(f"{t['id']}\t{t['title']}")
+
+
 def cmd_trace_check(work, ticket=None, repo=None):
     reqs = load_reqs(work)
     scs, errs = load_scenarios(work)
@@ -367,6 +374,8 @@ def main(a):
         cmd_status(rest[0], rest[1] if len(rest) > 1 else None)
     elif c == "ready":
         cmd_ready(rest[0])
+    elif c == "tickets":
+        cmd_tickets(rest[0])
     elif c == "trace-check":
         repo = rest[rest.index("--repo") + 1] if "--repo" in rest else None
         pos = [x for i, x in enumerate(rest) if x != "--repo" and (i == 0 or rest[i - 1] != "--repo")]

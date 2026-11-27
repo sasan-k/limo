@@ -52,6 +52,23 @@ class TicketBoard:
         ready_ids = [] if match is None or match.group(1).strip() == "-" else match.group(1).split()
         return states, ready_ids
 
+    def titles(self, workspace: Path, project: str, feature: str) -> dict[str, str]:
+        env = {"FX_DB": str(self._fx_db), "FX_SCOPE": project}
+        try:
+            result = self._executor.run(
+                ["fx", "tickets", f"work/{feature}"], workspace, self._timeout_s, env=env
+            )
+        except ExecutorError as e:
+            raise Conflict("map_invalid", _first_line(str(e))) from e
+        if result.code != 0:
+            raise Conflict("map_invalid", _first_line(result.stderr))
+        titles: dict[str, str] = {}
+        for line in result.stdout.splitlines():
+            ticket_id, sep, title = line.partition("\t")
+            if sep:
+                titles[ticket_id] = title
+        return titles
+
     def set_status(self, ref: TicketRef, status: str) -> None:
         env = {"FX_DB": str(self._fx_db), "FX_SCOPE": ref.project}
         try:

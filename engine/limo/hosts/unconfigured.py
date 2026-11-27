@@ -1,4 +1,4 @@
-from limo.hosts.ports import HostError, HostProject, MergeRequestRef, MrStatus
+from limo.hosts.ports import HostError, HostProject, IssueRef, MergeRequestRef, MrStatus
 
 
 class UnconfiguredHost:
@@ -9,4 +9,10 @@ class UnconfiguredHost:
         raise HostError("repo host adapter not configured")
 
     def merge_request_status(self, project: HostProject, number: int) -> MrStatus:
+        raise HostError("repo host adapter not configured")
+
+    def create_issue(self, project: HostProject, title: str) -> IssueRef:
+        raise HostError("repo host adapter not configured")
+
+    def set_issue_status(self, project: HostProject, number: int, status: str) -> None:
         raise HostError("repo host adapter not configured")

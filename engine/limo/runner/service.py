@@ -6,6 +6,7 @@ from limo.agents.models import RunIn
 from limo.agents.service import RunService
 from limo.common.errors import ExternalError, NotFound
 from limo.features.phases import PhaseService
+from limo.hosts.issues import IssueService
 from limo.inbox.service import InboxService
 from limo.projects.models import Project
 from limo.projects.repo import ProjectRepo
@@ -27,6 +28,7 @@ class RunnerDeps:
     shipping: ShippingService
     git: GitOps
     phases: PhaseService
+    issues: IssueService
 
 
 class RunnerService:
@@ -38,6 +40,7 @@ class RunnerService:
         self._shipping = deps.shipping
         self._git = deps.git
         self._phases = deps.phases
+        self._issues = deps.issues
         self._max_concurrent = max_concurrent
 
     def step(self, project_name: str, feature: str) -> StepResult:
@@ -52,6 +55,7 @@ class RunnerService:
         if action.reason in ("stage_failed", "run_active"):
             return StepResult(run=None, reason=action.reason)
         states, ready = self._board.read(Path(project.workspace), project.name, feature)
+        self._issues.sync(project, feature, states)
         held = self._inbox.held_tickets(project.id, feature)
         states = [s for s in states if s.id not in held]
         ready = [t for t in ready if t not in held]

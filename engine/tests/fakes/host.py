@@ -3,7 +3,13 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from limo.hosts.ports import HostError, HostProject, MergeRequestRef, MrStatus, ReviewComment
+from limo.hosts.ports import HostError, HostProject, IssueRef, MergeRequestRef, MrStatus, ReviewComment
+
+
+@dataclass
+class FakeIssue:
+    title: str
+    labels: list[str]
 
 
 @dataclass
@@ -23,6 +29,7 @@ class FakeHost:
     def __init__(self) -> None:
         self.calls: list[tuple[str, int | str]] = []
         self.mrs: dict[int, FakeMr] = {}
+        self.issues: dict[int, FakeIssue] = {}
         self.fail_next: set[str] = set()
 
     def _check(self, name: str) -> None:
@@ -46,6 +53,20 @@ class FakeHost:
         self.calls.append(("merge_request_status", number))
         mr = self.mrs[number]
         return MrStatus(state=mr.state, approved=mr.approved, change_requests=list(mr.comments))
+
+    def create_issue(self, project: HostProject, title: str) -> IssueRef:
+        self._check("create_issue")
+        number = len(self.issues) + 1
+        self.issues[number] = FakeIssue(title=title, labels=[])
+        self.calls.append(("create_issue", title))
+        return IssueRef(number=number, url=f"https://host.example/issues/{number}")
+
+    def set_issue_status(self, project: HostProject, number: int, status: str) -> None:
+        self._check("set_issue_status")
+        issue = self.issues[number]
+        issue.labels = [label for label in issue.labels if not label.startswith("limo:")]
+        issue.labels.append(f"limo:{status}")
+        self.calls.append(("set_issue_status", number))
 
     def approve(self, number: int) -> None:
         self.mrs[number].approved = True
