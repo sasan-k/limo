@@ -11,6 +11,7 @@ from limo.agents.repo import RunRepo
 from limo.agents.settings_repo import AgentSettingsRepo
 from limo.agents.tools import ToolBox, ToolContext, ToolOutcome
 from limo.common.errors import NotFound
+from limo.cost.service import CallRef, CostService
 from limo.llm.ports import LlmClient, LlmError, LlmRequest
 from limo.projects.repo import ProjectRepo
 
@@ -20,6 +21,7 @@ class RunStores:
     runs: RunRepo
     projects: ProjectRepo
     agent_settings: AgentSettingsRepo
+    cost: CostService
 
 
 @dataclass(frozen=True)
@@ -66,7 +68,8 @@ class RunService:
         run = self._stores.runs.get(run_id)
         if run is None:
             raise NotFound("run_not_found", f"run {run_id} not found")
-        return run
+        tokens, cost = self._stores.cost.run_summary(run_id)
+        return run.model_copy(update={"tokens": tokens, "cost": cost})
 
     def tool_calls(self, run_id: str) -> list[ToolCall]:
         self.get(run_id)
@@ -87,6 +90,7 @@ class RunService:
         if project is None:
             self._stores.runs.finish(run.id, "failed", None, f"project not found: {run.project}")
             return
+        ref = CallRef(run.id, project.id, run.agent, run.feature, run.ticket)
         workspace = Path(project.workspace)
         readable: dict[str, tuple[int, int] | None] | None = None
         if run.agent == "build":
@@ -98,16 +102,19 @@ class RunService:
             pack = parse_context_pack(plan_path.read_text())
             readable = {**pack, plan_rel: None, "context/INDEX.md": None}
         ctx = ToolContext(run.agent, workspace, self._config.skills_dir / run.agent, readable)
-        self._loop(run, ctx)
+        self._loop(run, ctx, ref)
 
-    def _loop(self, run: Run, ctx: ToolContext) -> None:
+    def _loop(self, run: Run, ctx: ToolContext, ref: CallRef) -> None:
         system = (self._config.skills_dir / run.agent / "SKILL.md").read_text()
         task = f"feature={run.feature} ticket={run.ticket}" if run.ticket else f"feature={run.feature}"
         messages: list[dict[str, Any]] = [{"role": "user", "content": task}]
         seq = 0
+        call_no = 0
         for _ in range(self._config.max_turns):
             request = LlmRequest(run.model, system, list(messages), self._tools.specs(run.agent))
             resp = self._llm.create(request)
+            call_no += 1
+            self._stores.cost.record(ref, call_no, resp.model, resp.usage)
             messages.append({"role": "assistant", "content": resp.content})
             uses = [b for b in resp.content if b.get("type") == "tool_use"]
             if resp.stop_reason != "tool_use" or not uses:

@@ -18,9 +18,6 @@ class AgentService:
             for agent in self._registry.list()
         ]
 
-    def model_for(self, agent: str) -> str:
-        return self._settings.get(agent) or self._default_model
-
     def set_model(self, name: str, model: str) -> Agent:
         if name not in AGENT_NAMES:
             raise NotFound("agent_not_found", f"agent {name} not found")
