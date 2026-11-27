@@ -73,6 +73,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{name}/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Board */
+        get: operations["get_board_api_projects__name__board_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events": {
         parameters: {
             query?: never;
@@ -375,6 +392,37 @@ export interface components {
             ticket: string;
             /** Cost */
             cost: string;
+        };
+        /** Board */
+        Board: {
+            /** Project */
+            project: string;
+            /** Statuses */
+            statuses: string[];
+            /** Features */
+            features: components["schemas"]["BoardFeature"][];
+        };
+        /** BoardFeature */
+        BoardFeature: {
+            /** Name */
+            name: string;
+            /** Tickets */
+            tickets: components["schemas"]["BoardTicket"][];
+        };
+        /** BoardTicket */
+        BoardTicket: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /** Depends On */
+            depends_on: string[];
+            /** Build Tries */
+            build_tries: number;
+            /** Plan Tries */
+            plan_tries: number;
         };
         /** BudgetIn */
         BudgetIn: {
@@ -841,6 +889,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentCard"][];
+                };
+            };
+        };
+    };
+    get_board_api_projects__name__board_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Board"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

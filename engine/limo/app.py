@@ -11,6 +11,7 @@ from limo.agents.service import RunConfig, RunService, RunStores
 from limo.agents.settings_repo import AgentSettingsRepo
 from limo.agents.tools import ToolBox
 from limo.api.agents_routes import agents_router
+from limo.api.board_routes import board_router
 from limo.api.budget_routes import budget_router
 from limo.api.cards_routes import cards_router
 from limo.api.cost_routes import cost_router
@@ -22,6 +23,7 @@ from limo.api.incidents_routes import incidents_router
 from limo.api.projects_routes import projects_router
 from limo.api.runner_routes import runner_router
 from limo.api.runs_routes import runs_router
+from limo.board.service import BoardService
 from limo.budget.repo import BudgetRepo
 from limo.budget.service import BudgetService
 from limo.cards.repo import CardRepo
@@ -164,6 +166,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     app.include_router(
         cards_router(AgentCardService(CardRepo(settings.db_path), agent_settings, settings.default_model))
     )
+    app.include_router(board_router(BoardService(ProjectRepo(settings.db_path), board)))
     app.include_router(events_router(events, settings.sse_heartbeat_s))
     app.include_router(runs_router(runs))
     app.include_router(cost_router(cost))

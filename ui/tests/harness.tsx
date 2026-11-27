@@ -36,6 +36,29 @@ export function serveCards(cards: { current: AgentCard[] }, status = 200): void 
   );
 }
 
+export type ApiCall = { method: string; path: string; body: unknown };
+
+/** Engine stub for any GET path in `routes.current` (else 404); records every call in the returned list.
+ * A route value `{ status, body }` under key `"POST <path>"` answers that POST. */
+export function serveApi(routes: { current: Record<string, unknown> }): ApiCall[] {
+  const calls: ApiCall[] = [];
+  vi.stubGlobal("EventSource", FakeEventSource);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (path: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      calls.push({ method, path, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+      const key = method === "GET" ? path : `${method} ${path}`;
+      if (!(key in routes.current)) return new Response("{}", { status: 404 });
+      const value = routes.current[key];
+      if (method === "GET") return new Response(JSON.stringify(value), { status: 200 });
+      const reply = value as { status: number; body: unknown };
+      return new Response(JSON.stringify(reply.body), { status: reply.status });
+    }),
+  );
+  return calls;
+}
+
 /** Renders the whole app with a fresh query client (no retries). */
 export function renderApp(): void {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

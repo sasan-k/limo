@@ -9,13 +9,14 @@ usage:
   fx.py set         <work/feature> TKT-n key=value…  set status / build_tries / plan_tries (inc: key=+1)
   fx.py ready       <work/feature>                 list tickets ready to plan (status todo, deps done)
   fx.py tickets    <work/feature>                 print id<TAB>title per ticket
+  fx.py board      <work/feature>                 print tickets (map + state) as a JSON array
   fx.py retitle    <work/feature> TKT-n <title>   rewrite that ticket's title in map.yaml
   fx.py adr         <context dir> ADR-n <status>   flip ADR status in ADR file and adr/INDEX.md
 Ticket definitions live in map.yaml; status + tries live in SQLite at $FX_DB
 (default <project>/.factory/state.db). Tickets missing from the DB start as todo, 0, 0.
 Exit code 0 = ok, 1 = check failed, 2 = usage/parse error.
 """
-import os, re, sqlite3, sys
+import json, os, re, sqlite3, sys
 from pathlib import Path
 
 STATUSES = {"todo", "planned", "built", "verified", "review", "done", "blocked", "abandoned"}
@@ -208,6 +209,12 @@ def cmd_tickets(work):
         print(f"{t['id']}\t{t['title']}")
 
 
+def cmd_board(work):
+    _, tickets = load_tickets(work)
+    keys = ["id", "title", "status", "depends_on", "build_tries", "plan_tries"]
+    print(json.dumps([{k: t.get(k, [] if k == "depends_on" else "") for k in keys} for t in tickets]))
+
+
 def cmd_retitle(work, ticket, title):
     if not 1 <= len(title) <= 120 or "\n" in title:
         die("bad title")
@@ -392,6 +399,8 @@ def main(a):
         cmd_ready(rest[0])
     elif c == "tickets":
         cmd_tickets(rest[0])
+    elif c == "board":
+        cmd_board(rest[0])
     elif c == "trace-check":
         repo = rest[rest.index("--repo") + 1] if "--repo" in rest else None
         pos = [x for i, x in enumerate(rest) if x != "--repo" and (i == 0 or rest[i - 1] != "--repo")]
