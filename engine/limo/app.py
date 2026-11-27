@@ -16,6 +16,7 @@ from limo.api.cost_routes import cost_router
 from limo.api.errors import install_error_handlers
 from limo.api.features_routes import features_router
 from limo.api.inbox_routes import inbox_router
+from limo.api.incidents_routes import incidents_router
 from limo.api.projects_routes import projects_router
 from limo.api.runner_routes import runner_router
 from limo.api.runs_routes import runs_router
@@ -37,6 +38,8 @@ from limo.hosts.repo import MergeRequestRepo
 from limo.hosts.unconfigured import UnconfiguredHost
 from limo.inbox.repo import HoldRepo
 from limo.inbox.service import InboxService
+from limo.incidents.repo import IncidentRepo
+from limo.incidents.service import IncidentService
 from limo.llm.anthropic_client import AnthropicLlm
 from limo.llm.ports import LlmClient
 from limo.projects.repo import ProjectRepo
@@ -105,6 +108,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
             git,
             PhaseService(feature_repo, runs, board),
             IssueService(deps.host or UnconfiguredHost(), IssueRepo(settings.db_path), board),
+            IncidentService(IncidentRepo(settings.db_path), runs, board, settings.run_timeout_s),
         ),
         settings.max_concurrent_tickets,
     )
@@ -127,6 +131,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     app.include_router(runs_router(runs))
     app.include_router(cost_router(cost))
     app.include_router(runner_router(runner))
+    app.include_router(incidents_router(runner))
     app.include_router(budget_router(budget))
     app.include_router(inbox_router(inbox, runner))
     app.include_router(features_router(features))

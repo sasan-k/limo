@@ -40,6 +40,16 @@ def stage_responder(skills_dir: Path) -> Callable[[LlmRequest], LlmResponse]:
     return respond
 
 
+def resolver_responder(skills_dir: Path, action_text: str) -> Callable[[LlmRequest], LlmResponse]:
+    """Resolver requests get `final(action_text)`; every other agent ends at once with `final()`."""
+    resolver_prompt = (skills_dir / "resolver" / "SKILL.md").read_text()
+
+    def respond(request: LlmRequest) -> LlmResponse:
+        return final(action_text) if request.system == resolver_prompt else final()
+
+    return respond
+
+
 class FakeLlm:
     """Scripted Claude API: returns queued responses in order, then `final()`; records every request."""
 

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     skills_dir: Path = REPO_ROOT / "skills"
     scripts_dir: Path = REPO_ROOT / "scripts"
     command_timeout_s: float = 600.0
+    run_timeout_s: float = 1800.0
     max_concurrent_tickets: int = 1
     anthropic_api_key: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY", "anthropic_api_key")

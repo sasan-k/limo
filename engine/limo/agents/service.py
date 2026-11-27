@@ -66,6 +66,7 @@ class RunService:
             created_at=datetime.now(UTC).isoformat(),
             finished_at=None,
             args=data.args,
+            ticket_status=data.ticket_status,
         )
         self._stores.runs.insert(run, project.id)
         self._pool.submit(self._execute, run.id)
@@ -73,6 +74,15 @@ class RunService:
 
     def latest(self, project_id: str, feature: str, agent: str, args: str | None) -> Run | None:
         return self._stores.runs.latest(project_id, feature, agent, args)
+
+    def latest_for_ticket(self, project_id: str, feature: str, ticket: str) -> Run | None:
+        return self._stores.runs.latest_for_ticket(project_id, feature, ticket)
+
+    def fail_timed_out(self, project_id: str, cutoff_iso: str) -> int:
+        run_ids = self._stores.runs.active_older_than(project_id, cutoff_iso)
+        for run_id in run_ids:
+            self._stores.runs.finish(run_id, "failed", None, "timeout")
+        return len(run_ids)
 
     def get(self, run_id: str) -> Run:
         run = self._stores.runs.get(run_id)

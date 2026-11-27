@@ -3,8 +3,8 @@ ticket: TKT-9
 feature: limo
 scenarios: [SC-32, SC-33]
 scope: [runner, agents]
-revision: 0
-run: all
+revision: 1
+run: from-STEP-10
 read: [work/limo/map.yaml, work/limo/features/resolver.feature, skills/resolver/SKILL.md, skills/resolver/templates/resolve-report.md, DESIGN.md#Orchestration, context/INDEX.md, context/code-rules.md, context/security.md, context/testing.md, context/data.md, engine/limo/runner/service.py, engine/limo/runner/tickets.py, engine/limo/agents/repo.py, engine/limo/agents/models.py, engine/limo/agents/service.py, engine/tests/fakes/llm.py, engine/tests/builders.py]
 ---
 # TKT-9: Stuck tickets open an incident, get a resolver run, and a retry is applied
@@ -85,6 +85,7 @@ File: `engine/tests/functional/test_incidents.py`. Step = `POST /api/projects/sh
 - `engine/limo/common/errors.py`, `engine/limo/store/db.py`, `engine/limo/projects/models.py`, `engine/limo/features/repo.py` — read
 - `engine/tests/fakes/llm.py` — STEP-1 edit; `engine/tests/builders.py`, `engine/tests/conftest.py` — read
 - `engine/tests/functional/test_runs.py`:75-90 — like: building an own client with custom `Settings`
+- `engine/tests/functional/test_runner.py`:44-56 — STEP-10 edit
 
 ## Steps
 ### STEP-1 fake resolver responder and tests (test first)
@@ -165,6 +166,21 @@ ALTER TABLE runs ADD COLUMN ticket_status TEXT;
 - verify: `mise run test:engine` → all pass (107 + FT-9 cases); earlier tests must pass unchanged
 
 ### STEP-9 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates` (up to 3 fixes), `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` all passed
+
+### STEP-10 FT-5.2 checks only that TKT-2 does not start (revision 1: verify r0)
+- file: `engine/tests/functional/test_runner.py` (edit)
+- do: in `test_ft_5_2_…`, replace the last two lines (`assert r.json()["run"] is None` and `assert r.json()["reason"] == "no_ready_ticket"`) with:
+```python
+    run = r.json()["run"]
+    assert run is None or run["ticket"] != "TKT-2"
+```
+  and update its docstring to `"""FT-5.2 TKT-1 blocked, TKT-3 done: TKT-2 waits on TKT-1 and is not started."""`
+- verify: `mise run test:engine` → all passed
+
+### STEP-11 format, gates, full suite
 - file: none new (edit only lines a gate reports, in files this plan created or edited)
 - do: `mise run fmt`, `mise run gates` (up to 3 fixes), `mise run test`; never add `# noqa`
 - verify: gates exit 0; `mise run test` all passed

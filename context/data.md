@@ -33,7 +33,7 @@
 - `issues` — project_id, feature, ticket (PK), number, url, last mirrored status — `009_issues.sql`
 - `features` — project_id, name (unique per project), phase (architecture|spec|nfr|tickets) — `008_features.sql`; `runs.args` added there
 - `merge_requests` — project_id, feature, ticket, number, url, branch, state (open|merged|closed), last_review_id, needs_push — `007_merge_requests.sql`
-- `incidents` — stuck event, resolver report path, applied action
+- `incidents` — project_id, feature, ticket, k, trigger, status (open|resolved|needs_human), run_id, resolver_run_id, action — `010_incidents.sql`; `runs.ticket_status` (status at dispatch); `runs` finish only while queued/running
 - `prices` — model (PK), input/output/cache_read/cache_write micros per MTok — `004_cost.sql`; no price → cost 0, `priced = 0`
 - `agent_settings` — agent (PK), model, updated_at — `003_agent_settings.sql`
 - `settings` — caps, polling interval (planned)

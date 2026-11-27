@@ -25,6 +25,7 @@ class RunIn(BaseModel):
     feature: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,39}$")
     ticket: str | None = Field(default=None, pattern=r"^TKT-\d+$")
     args: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9 =-]{0,79}$")
+    ticket_status: str | None = Field(default=None, pattern=r"^[a-z]+$")
 
 
 class Run(BaseModel):
@@ -42,6 +43,7 @@ class Run(BaseModel):
     tokens: TokenCounts | None = None
     cost: str | None = None
     args: str | None = None
+    ticket_status: str | None = None
 
 
 class ToolCall(BaseModel):
