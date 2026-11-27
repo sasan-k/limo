@@ -63,7 +63,12 @@ export function InboxEntry({ item }: { item: InboxItem }) {
       <CardContent className="flex flex-col gap-3 text-sm">
         <p>{item.reason}</p>
         {item.link && (
-          <a className="text-primary underline" href={item.link} target="_blank" rel="noreferrer">
+          <a
+            className="text-foreground underline decoration-primary decoration-2"
+            href={item.link}
+            target="_blank"
+            rel="noreferrer"
+          >
             Open issue
           </a>
         )}

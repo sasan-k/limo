@@ -6,6 +6,7 @@
 - engine: Python 3.12, FastAPI, served by uvicorn (ADR-1)
 - ui: TypeScript 5.9.3 (held < 6.1 for typescript-eslint, openapi-typescript), React 19.3, Vite 8.4, Tailwind 4.3 (`@tailwindcss/vite`), react-query 5.108, Node 22 LTS (ADR-1)
 - ui tests: Vitest 5.1 + jsdom, Playwright 1.65 + `@axe-core/playwright`; `openapi-typescript` generates `ui/src/api/schema.d.ts`
+- ui theme: shadcn preset `b3GxvZtKJ1` (theme + font, `ui/components.json`) in `ui/src/styles/theme.css`; fonts `@fontsource-variable/noto-sans`, `@fontsource-variable/jetbrains-mono` 5.3.0 (ADR-13)
 - tool versions pinned in `mise.toml`: python 3.12.16, node 22.23.5, uv 0.13.10; engine `requires-python >=3.12,<3.13`
 
 ## Data & messaging
