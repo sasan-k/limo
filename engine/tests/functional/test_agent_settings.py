@@ -1,8 +1,11 @@
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
+from limo.app import Deps, create_app
 from limo.config import Settings
+from limo.executor.local import LocalExecutor
 from tests.builders import add_cart_project, start_and_wait
 from tests.fakes.llm import FakeLlm
 
@@ -68,3 +71,25 @@ def test_ft_3_7_all_agents_default_model(client: TestClient, settings: Settings)
     agents = client.get("/api/agents").json()
     assert len(agents) == 7
     assert all(a["model"] == settings.default_model for a in agents)
+
+
+def test_routine_agents_default_to_cheaper_models(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Without overrides, build runs on Haiku, spec/verify/close on Sonnet, the rest on the default model;
+    a model set through the API still wins."""
+    monkeypatch.delenv("LIMO_AGENT_MODELS", raising=False)
+    settings = Settings(data_dir=tmp_path / "data", _env_file=None)
+    with TestClient(create_app(settings, Deps(LocalExecutor(), FakeLlm()))) as client:
+        models = {a["name"]: a["model"] for a in client.get("/api/agents").json()}
+        assert models == {
+            "architecture": "claude-opus-5-5",
+            "spec": "claude-sonnet-5-5",
+            "plan": "claude-opus-5-5",
+            "build": "claude-haiku-5-5",
+            "verify": "claude-sonnet-5-5",
+            "close": "claude-sonnet-5-5",
+            "resolver": "claude-opus-5-5",
+        }
+        client.put("/api/agents/build/model", json={"model": "claude-sonnet-5-5"})
+        assert {a["name"]: a["model"] for a in client.get("/api/agents").json()}[
+            "build"
+        ] == "claude-sonnet-5-5"

@@ -11,6 +11,8 @@ You unblock tickets. You never write code, tests, plans, scenarios or ADRs. The 
 - `work/<feature>/incidents/TKT-n-<k>.md` — trigger, ticket state, last reports' failure excerpts, stage output tail
 - Read-only, as needed: `work/<feature>/` (map, features, questions, plans, reports), `context/`, code
 - Repo host, read-only: issue/MR/PR comments, labels, CI job logs (`host-query`; manually: `glab`/`gh` read commands)
+- Tools: issue independent reads, lists and searches together in one turn; read line ranges when you
+  know where to look. Every tool result stays in your context for every later turn.
 
 ## Steps
 1. Read the incident. Collect evidence; each item is `file:line`, a log line, or host output.

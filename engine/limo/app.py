@@ -33,6 +33,7 @@ from limo.budget.repo import BudgetRepo
 from limo.budget.service import BudgetService
 from limo.cards.repo import CardRepo
 from limo.cards.service import AgentCardService
+from limo.common.constants import AGENT_NAMES
 from limo.config import Settings
 from limo.cost.pricing import to_micros
 from limo.cost.repo import PriceRepo, UsageRepo
@@ -111,6 +112,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     inbox = InboxService(HoldRepo(settings.db_path))
     feature_repo = FeatureRepo(settings.db_path)
     features = FeatureService(feature_repo, ProjectRepo(settings.db_path))
+    models = {agent: settings.model_for(agent) for agent in AGENT_NAMES}
     tools = ToolBox(deps.executor, settings.command_timeout_s)
     gateway = McpGateway(tools, RunRepo(settings.db_path))
     cli = CliRunner(
@@ -131,7 +133,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         tools,
         RunConfig(
             settings.skills_dir,
-            settings.default_model,
+            models,
             settings.max_turns,
             fx_db=settings.db_path,
             backend=settings.agent_backend,
@@ -190,13 +192,9 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     install_error_handlers(app)
     app.include_router(projects_router(projects))
     app.include_router(
-        agents_router(
-            AgentService(AgentRegistry(settings.skills_dir), agent_settings, settings.default_model)
-        )
+        agents_router(AgentService(AgentRegistry(settings.skills_dir), agent_settings, models))
     )
-    app.include_router(
-        cards_router(AgentCardService(CardRepo(settings.db_path), agent_settings, settings.default_model))
-    )
+    app.include_router(cards_router(AgentCardService(CardRepo(settings.db_path), agent_settings, models)))
     app.include_router(board_router(BoardService(ProjectRepo(settings.db_path), board)))
     app.include_router(
         prompts_router(PromptService(settings.skills_dir, git, PromptSaveRepo(settings.db_path), events))

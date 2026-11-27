@@ -20,6 +20,8 @@ Review (`work/<feature>/reports/TKT-n-review-<k>.md` newer than the plan):
 - **Fix pass** if every comment can be met by editing files already in the Context pack, with no change to
   Design contracts/data or the operation matrix → append `## Fix <k>` (template), set `run: fix-<k>`.
 - Otherwise → full revision as above, `run: all`. Unclear comment → question on the MR/PR, set `blocked`, stop.
+- Tools: issue independent reads, lists and searches together in one turn; read line ranges when you
+  know where to look. Every tool result stays in your context for every later turn.
 
 ## Output
 `work/<feature>/plans/TKT-n.md` from `templates/plan.md` (this skill dir). Proposed ADRs → `context/adr/ADR-n.md` + L1 line.

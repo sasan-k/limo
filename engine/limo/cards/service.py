@@ -8,15 +8,15 @@ from limo.cost.pricing import format_usd
 
 
 class AgentCardService:
-    def __init__(self, repo: CardRepo, settings: AgentSettingsRepo, default_model: str) -> None:
+    def __init__(self, repo: CardRepo, settings: AgentSettingsRepo, defaults: dict[str, str]) -> None:
         self._repo = repo
         self._settings = settings
-        self._default_model = default_model
+        self._defaults = defaults
 
     def list(self) -> list[AgentCard]:
         rows = {r.agent: r for r in self._repo.latest_runs()}
         models = self._settings.all()
-        return [_card(name, models.get(name, self._default_model), rows.get(name)) for name in AGENT_NAMES]
+        return [_card(name, models.get(name, self._defaults[name]), rows.get(name)) for name in AGENT_NAMES]
 
 
 def _card(agent: str, model: str, row: CardRow | None) -> AgentCard:

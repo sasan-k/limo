@@ -15,6 +15,8 @@ Follow the plan exactly. You do not design, explore, or improve.
   - file marked `read` → read it whole; it may show routes, helpers and signatures your steps need
   - files any step of this plan creates or edits (`file:` lines) are always yours to read and fix
 - `context/INDEX.md` → **Commands** section only
+- Tools: issue independent reads, lists and searches together in one turn; read line ranges when you
+  know where to look. Every tool result stays in your context for every later turn.
 
 ## Output
 - Code and tests changed as the steps say. No commit.

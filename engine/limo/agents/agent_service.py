@@ -6,15 +6,17 @@ from limo.common.errors import NotFound
 
 
 class AgentService:
-    def __init__(self, registry: AgentRegistry, settings: AgentSettingsRepo, default_model: str) -> None:
+    def __init__(
+        self, registry: AgentRegistry, settings: AgentSettingsRepo, defaults: dict[str, str]
+    ) -> None:
         self._registry = registry
         self._settings = settings
-        self._default_model = default_model
+        self._defaults = defaults
 
     def list(self) -> list[Agent]:
         models = self._settings.all()
         return [
-            agent.model_copy(update={"model": models.get(agent.name, self._default_model)})
+            agent.model_copy(update={"model": models.get(agent.name, self._defaults[agent.name])})
             for agent in self._registry.list()
         ]
 

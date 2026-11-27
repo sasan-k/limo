@@ -13,6 +13,8 @@ from tests.fakes.llm import FakeLlm
 
 # Tests drive the Messages API fake unless a test picks the claude-cli backend (ADR-14).
 os.environ.setdefault("LIMO_AGENT_BACKEND", "api")
+# Tests expect one default model for every agent unless a test sets one.
+os.environ.setdefault("LIMO_AGENT_MODELS", "{}")
 
 
 @pytest.fixture

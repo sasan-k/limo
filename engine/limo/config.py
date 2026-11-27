@@ -21,6 +21,12 @@ class Settings(BaseSettings):
         default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY", "anthropic_api_key")
     )
     default_model: str = "claude-opus-5-5"
+    agent_models: dict[str, str] = {
+        "spec": "claude-sonnet-5-5",
+        "build": "claude-haiku-5-5",
+        "verify": "claude-sonnet-5-5",
+        "close": "claude-sonnet-5-5",
+    }
     max_turns: int = 50
     default_ticket_budget: float = 10.0
     default_agent_budget: float = 5.0
@@ -40,6 +46,10 @@ class Settings(BaseSettings):
     claude_bin: str = "claude"
     engine_url: str = "http://127.0.0.1:8700"
     agent_cwd: Path = Path(tempfile.gettempdir()) / "limo-agent"
+
+    def model_for(self, agent: str) -> str:
+        """Default model of an agent unless set from the UI/API: `agent_models`, else `default_model`."""
+        return self.agent_models.get(agent, self.default_model)
 
     @property
     def db_path(self) -> Path:
