@@ -30,6 +30,8 @@ from limo.executor.ports import Executor
 from limo.features.phases import PhaseService
 from limo.features.repo import FeatureRepo
 from limo.features.service import FeatureService
+from limo.hosts.issue_repo import IssueRepo
+from limo.hosts.issues import IssueService
 from limo.hosts.ports import RepoHost
 from limo.hosts.repo import MergeRequestRepo
 from limo.hosts.unconfigured import UnconfiguredHost
@@ -102,6 +104,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
             shipping,
             git,
             PhaseService(feature_repo, runs, board),
+            IssueService(deps.host or UnconfiguredHost(), IssueRepo(settings.db_path), board),
         ),
         settings.max_concurrent_tickets,
     )

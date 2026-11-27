@@ -3,8 +3,8 @@ ticket: TKT-8
 feature: limo
 scenarios: [SC-30, SC-31]
 scope: [host]
-revision: 0
-run: all
+revision: 2  # resolver plan-detail fix (step order), human-approved (TKT-8-resolve-1)
+run: from-STEP-2
 read: [work/limo/map.yaml, work/limo/features/host.feature, work/limo/questions.md#Q-5, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/data.md, ADR-3:L2, ADR-4:L2, scripts/fx.py, engine/limo/hosts/*.py, engine/limo/runner/service.py, engine/limo/runner/tickets.py, engine/tests/fakes/host.py]
 ---
 # TKT-8: Tickets are mirrored to repo host issues
@@ -52,7 +52,7 @@ read: [work/limo/map.yaml, work/limo/features/host.feature, work/limo/questions.
 | OP-3 `fx tickets` | FT-8.1 | n/a: map validated by `load_map` | n/a: covered by TKT-5 FT-5.7 | n/a: read only | n/a: read only | n/a: read only | FT-8.4 | n/a: local |
 
 ## Functional tests
-All in `engine/tests/functional/test_issues.py`. `host.issues` (STEP-2) maps number → `FakeIssue(title, labels: list[str])`. Step = `POST /api/projects/shop/features/<feature>/step`; runs end with `wait_run`. Errors `r.json()["error"]["code"]`.
+All in `engine/tests/functional/test_issues.py`. `host.issues` (STEP-2) maps number → `FakeIssue(title, labels: list[str])`. Step = `POST /api/projects/shop/features/<feature>/step`; runs end with `wait_run` (`tests/builders.py`). Intake = `POST /api/projects/shop/features` with `{"name": "posts", "requirements": "Posts can be listed."}` → 201. `set_status`, `write_workspace_file`, `add_cart_project` are in `tests/builders.py`. Errors `r.json()["error"]["code"]`.
 
 | FT | Covers | File | Given (via production action) | When | Then (observable) |
 |---|---|---|---|---|---|
@@ -66,14 +66,15 @@ All in `engine/tests/functional/test_issues.py`. `host.issues` (STEP-2) maps num
 
 ## Context pack
 - `scripts/fx.py`:1-15, 190-205, 355-380 — STEP-1 edit (`cmd_tickets`, dispatch, usage line at the top)
-- `engine/limo/hosts/ports.py`, `engine/limo/hosts/unconfigured.py` — STEP-3 edit
+- `engine/limo/hosts/ports.py`, `engine/limo/hosts/unconfigured.py` — STEP-2 edit
 - `engine/limo/hosts/repo.py` — like: repository pattern
 - `engine/limo/runner/tickets.py` — STEP-5 edit
 - `engine/limo/runner/service.py` — STEP-6 edit
 - `engine/limo/app.py` — STEP-7 edit
 - `engine/limo/common/errors.py`, `engine/limo/store/db.py`, `engine/limo/projects/models.py` — read
-- `engine/tests/fakes/host.py` — STEP-2 edit
+- `engine/tests/fakes/host.py` — STEP-3 edit
 - `engine/tests/builders.py`, `engine/tests/conftest.py` — read
+- `engine/tests/functional/test_features.py` — like: intake + spec + map/nfr files in a test (FT-6.3, FT-6.4)
 
 ## Steps
 ### STEP-1 fx tickets
@@ -81,15 +82,15 @@ All in `engine/tests/functional/test_issues.py`. `host.issues` (STEP-2) maps num
 - do: add `cmd_tickets(work)`: `_, tickets = load_map(work)`; print `f"{t['id']}\t{t['title']}"` per ticket; dispatch `elif c == "tickets": cmd_tickets(rest[0])`; add a usage line `fx.py tickets <work/feature>  print id<TAB>title per ticket`
 - verify: `fx tickets work/limo | head -1` → `TKT-1	A user adds a project and sees the seven agents`
 
-### STEP-2 fake host issues (test first)
-- file: `engine/tests/fakes/host.py` (edit), `engine/tests/functional/test_issues.py` (create)
-- do: `FakeIssue(title: str, labels: list[str])`; `FakeHost.issues: dict[int, FakeIssue]`; `create_issue` (checks `fail_next`, records `("create_issue", title)`, numbers from 1) and `set_issue_status` (checks `fail_next`, records `("set_issue_status", number)`, removes labels starting `limo:`, appends `limo:<status>`). Then write FT-8.1 … FT-8.7; names `test_ft_8_<k>_<behavior>`, docstring starts `"""FT-8.<k> `.
-- verify: `mise run test:engine -- -k ft_8` → FAIL (no issues created)
-
-### STEP-3 port
+### STEP-2 port
 - file: `engine/limo/hosts/ports.py`, `engine/limo/hosts/unconfigured.py` (edit)
 - do: add `IssueRef(number: int, url: str)` and the two methods to `RepoHost`; `UnconfiguredHost` raises `HostError` for both
 - verify: `cd engine && uv run python -c "import limo.hosts.unconfigured"` → exit 0
+
+### STEP-3 fake host issues (test first)
+- file: `engine/tests/fakes/host.py` (edit), `engine/tests/functional/test_issues.py` (create)
+- do: `FakeIssue(title: str, labels: list[str])`; `FakeHost.issues: dict[int, FakeIssue]`; `create_issue` (checks `fail_next`, records `("create_issue", title)`, numbers from 1) and `set_issue_status` (checks `fail_next`, records `("set_issue_status", number)`, removes labels starting `limo:`, appends `limo:<status>`). Then write FT-8.1 … FT-8.7; names `test_ft_8_<k>_<behavior>`, docstring starts `"""FT-8.<k> `.
+- verify: `mise run test:engine -- -k ft_8` → FAIL (no issues created)
 
 ### STEP-4 table and repo
 - file: `engine/limo/store/migrations/009_issues.sql` (create), `engine/limo/hosts/issue_repo.py` (create)

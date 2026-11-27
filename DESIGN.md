@@ -107,7 +107,7 @@ Diagrams: [ARCHITECTURE.md](ARCHITECTURE.md) — update it with any change here.
 ```
 skills/<stage>/SKILL.md + templates/
 ARCHITECTURE.md    mermaid diagrams of this design
-scripts/fx.py      map-check · trace-check · status · ready · set · adr (stdlib only; `scripts/fx` symlink; env FX_DB, FX_SCOPE)
+scripts/fx.py      map-check · trace-check · status · ready · tickets · set · adr (stdlib only; `scripts/fx` symlink; env FX_DB, FX_SCOPE)
 install.sh
 ```
 
