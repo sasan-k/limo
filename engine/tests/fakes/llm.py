@@ -1,5 +1,6 @@
 import dataclasses
 from collections.abc import Callable
+from pathlib import Path
 
 from limo.llm.ports import LlmError, LlmRequest, LlmResponse, LlmUsage
 
@@ -21,6 +22,24 @@ def final_with(usage: LlmUsage, text: str = "done") -> LlmResponse:
     )
 
 
+NEXT_STATUS = {"plan": "planned", "build": "built", "verify": "verified", "close": "review"}
+
+
+def stage_responder(skills_dir: Path) -> Callable[[LlmRequest], LlmResponse]:
+    """Acts like each stage agent: first call sets the next ticket status via fx, second call ends the run."""
+    agents = {(skills_dir / a / "SKILL.md").read_text(): a for a in NEXT_STATUS}
+
+    def respond(request: LlmRequest) -> LlmResponse:
+        if len(request.messages) > 1:
+            return final()
+        agent = agents[request.system]
+        fields = dict(part.split("=", 1) for part in request.messages[0]["content"].split())
+        argv = ["fx", "set", f"work/{fields['feature']}", fields["ticket"], f"status={NEXT_STATUS[agent]}"]
+        return tool_use("run_command", {"argv": argv})
+
+    return respond
+
+
 class FakeLlm:
     """Scripted Claude API: returns queued responses in order, then `final()`; records every request."""
 
@@ -29,6 +48,7 @@ class FakeLlm:
         self.requests: list[LlmRequest] = []
         self.fail_with: LlmError | None = None
         self.repeat: Callable[[], LlmResponse] | None = None
+        self.responder: Callable[[LlmRequest], LlmResponse] | None = None
 
     def create(self, request: LlmRequest) -> LlmResponse:
         self.requests.append(request)
@@ -36,6 +56,8 @@ class FakeLlm:
             raise self.fail_with
         if self.repeat is not None:
             resp = self.repeat()
+        elif self.responder is not None:
+            resp = self.responder(request)
         else:
             resp = self.script.pop(0) if self.script else final()
         return dataclasses.replace(resp, model=request.model) if resp.model == "fake" else resp

@@ -21,7 +21,7 @@
 - `tickets` table schema is owned by `scripts/fx.py` (CREATE IF NOT EXISTS); migrations never alter it
 
 ## Ownership
-- `<module>/repo.py` repositories (+ `store/db.py` migrator) are the only code that runs SQL; ticket state only via `fx` functions
+- `<module>/repo.py` repositories (+ `store/db.py` migrator) are the only code that runs SQL; ticket state only via `fx` (`FX_DB` = this db, rows keyed `<project>/<feature>` via `FX_SCOPE`)
 
 ## Main entities
 - `projects` — id, name (unique), git_url, host (github|gitlab), status, default_branch, workspace, created_at — `001_projects.sql`

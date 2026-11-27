@@ -34,5 +34,6 @@
 - endpoint: `engine/limo/api/projects_routes.py`; error mapping: `engine/limo/api/errors.py`
 - agents: `engine/limo/api/agents_routes.py` (`GET /api/agents`, `PUT /api/agents/{name}/model`)
 - cost: `engine/limo/api/cost_routes.py` (`PUT/GET /api/prices`, `GET /api/projects/{name}/costs`)
+- runner step: `engine/limo/api/runner_routes.py` (`POST /api/projects/{name}/features/{feature}/step`)
 - runs: `engine/limo/api/runs_routes.py` (`POST /api/projects/{name}/runs`, `GET /api/runs/{id}`, `GET /api/runs/{id}/tool-calls`)
 - SSE: (planned) `engine/limo/api/events.py`

@@ -80,7 +80,8 @@ def test_ft_2_14_max_turns_stops_the_loop(tmp_path: Path, llm: FakeLlm) -> None:
     """FT-2.14 a model that never stops is cut off after max_turns requests and the run fails."""
     settings = Settings(data_dir=tmp_path / "data", max_turns=3, _env_file=None)
     llm.repeat = lambda: tool_use("list_files", {"path": "."})
-    with TestClient(create_app(settings, Deps(LocalExecutor(), llm))) as client:
+    deps = Deps(LocalExecutor(path_prefix=settings.scripts_dir), llm)
+    with TestClient(create_app(settings, deps)) as client:
         add_cart_project(client, tmp_path)
         run = start_and_wait(client, "plan", "TKT-1")
     assert run["status"] == "failed"

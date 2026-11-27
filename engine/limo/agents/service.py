@@ -29,6 +29,7 @@ class RunConfig:
     skills_dir: Path
     model: str
     max_turns: int
+    fx_db: Path
 
 
 class RunService:
@@ -75,6 +76,9 @@ class RunService:
         self.get(run_id)
         return self._stores.runs.tool_calls(run_id)
 
+    def active_count(self) -> int:
+        return self._stores.runs.active_count()
+
     def _execute(self, run_id: str) -> None:
         try:
             run = self.get(run_id)
@@ -101,7 +105,8 @@ class RunService:
                 return
             pack = parse_context_pack(plan_path.read_text())
             readable = {**pack, plan_rel: None, "context/INDEX.md": None}
-        ctx = ToolContext(run.agent, workspace, self._config.skills_dir / run.agent, readable)
+        env = {"FX_DB": str(self._config.fx_db), "FX_SCOPE": project.name}
+        ctx = ToolContext(run.agent, workspace, self._config.skills_dir / run.agent, readable, env=env)
         self._loop(run, ctx, ref)
 
     def _loop(self, run: Run, ctx: ToolContext, ref: CallRef) -> None:
