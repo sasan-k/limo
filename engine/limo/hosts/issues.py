@@ -6,6 +6,8 @@ from limo.hosts.ports import HostError, HostProject, RepoHost
 from limo.projects.models import Project
 from limo.runner.tickets import TicketBoard, TicketState
 
+FINISHED = ("done", "abandoned")
+
 
 class IssueService:
     def __init__(self, host: RepoHost, repo: IssueRepo, board: TicketBoard) -> None:
@@ -22,6 +24,8 @@ class IssueService:
         try:
             for state in states:
                 row = rows.get(state.id)
+                if row is None and state.status in FINISHED:
+                    continue  # finished before Limo tracked it (e.g. an adopted repo): no issue
                 if row is None:
                     ref = self._host.create_issue(hp, f"{state.id}: {titles[state.id]}")
                     self._host.set_issue_status(hp, ref.number, state.status)
