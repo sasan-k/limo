@@ -17,7 +17,7 @@
 | http + SSE | fastapi, uvicorn | SSE via `StreamingResponse` `text/event-stream` |
 | validation | pydantic v2 | request/response models, config |
 | LLM | anthropic (Python SDK) | Messages API, streaming; see ADR-6 |
-| repo hosts | httpx | GitLab + GitHub REST; no vendor SDKs |
+| repo hosts | httpx (runtime) | GitLab REST v4 + GitHub REST/GraphQL; no vendor SDKs; tests use respx |
 | db | sqlite3 (stdlib) | plain SQL, no ORM (ADR-3) |
 | ui components | tailwindcss, shadcn/ui | |
 | ui data | @tanstack/react-query | REST cache; SSE events invalidate queries |

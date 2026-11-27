@@ -22,6 +22,15 @@ class Settings(BaseSettings):
     max_turns: int = 50
     default_ticket_budget: float = 10.0
     default_agent_budget: float = 5.0
+    github_token: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("GITHUB_TOKEN", "github_token")
+    )
+    gitlab_token: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("GITLAB_TOKEN", "gitlab_token")
+    )
+    github_api_url: str = "https://api.github.com"
+    gitlab_api_url: str = "https://gitlab.com/api/v4"
+    host_timeout_s: float = 10.0
 
     @property
     def db_path(self) -> Path:

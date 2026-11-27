@@ -33,6 +33,7 @@ categories: happy, validation, not-found, conflict, invalid-state, idempotency, 
 | Claude Messages API | `FakeLlm` (script, repeat, fail_with; records requests; echoes request model), helpers `tool_use(…, usage=)`, `final`, `final_with(usage)` | `engine/tests/fakes/llm.py` |
 | GitLab / GitHub | `FakeHost` (MRs: approve, request_changes, merge via real git on the bare repo; issues: titles, status + extra labels, comments (`reply(n, body)` = human); fail_next; records calls) | `engine/tests/fakes/host.py` |
 | git remote | real local bare repo (not a fake) | per-test temp dir |
+| GitHub / GitLab HTTP (adapter contract) | respx routes + JSON fixtures, both hosts (ADR-12) | `engine/tests/contract/` |
 
 ## Test data
 - builders: `engine/tests/builders.py` — tiny target project (context/, work/, map.yaml) reused by tests

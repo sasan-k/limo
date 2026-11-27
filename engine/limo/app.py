@@ -31,11 +31,13 @@ from limo.executor.ports import Executor
 from limo.features.phases import PhaseService
 from limo.features.repo import FeatureRepo
 from limo.features.service import FeatureService
+from limo.hosts.github import GitHubHost
+from limo.hosts.gitlab import GitLabHost
 from limo.hosts.issue_repo import IssueRepo
 from limo.hosts.issues import IssueService
 from limo.hosts.ports import RepoHost
 from limo.hosts.repo import MergeRequestRepo
-from limo.hosts.unconfigured import UnconfiguredHost
+from limo.hosts.router import RoutedHost
 from limo.inbox.repo import HoldRepo
 from limo.inbox.service import InboxService
 from limo.incidents.apply import ActionApplier
@@ -64,6 +66,10 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     deps = deps or Deps(
         executor=LocalExecutor(path_prefix=settings.scripts_dir),
         llm=AnthropicLlm(settings.anthropic_api_key),
+    )
+    host = deps.host or RoutedHost(
+        GitHubHost(settings.github_token, settings.github_api_url, settings.host_timeout_s),
+        GitLabHost(settings.gitlab_token, settings.gitlab_api_url, settings.host_timeout_s),
     )
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     migrate(settings.db_path)
@@ -102,11 +108,8 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     )
     board = TicketBoard(deps.executor, settings.db_path, settings.command_timeout_s)
     git = GitOps(deps.executor, settings.command_timeout_s)
-    shipping = ShippingService(
-        git, deps.host or UnconfiguredHost(), MergeRequestRepo(settings.db_path), board
-    )
+    shipping = ShippingService(git, host, MergeRequestRepo(settings.db_path), board)
     incident_repo = IncidentRepo(settings.db_path)
-    host = deps.host or UnconfiguredHost()
     applier = ActionApplier(board, host, IssueRepo(settings.db_path), incident_repo)
     runner = RunnerService(
         RunnerDeps(
@@ -117,7 +120,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
             shipping,
             git,
             PhaseService(feature_repo, runs, board),
-            IssueService(deps.host or UnconfiguredHost(), IssueRepo(settings.db_path), board),
+            IssueService(host, IssueRepo(settings.db_path), board),
             IncidentService(
                 IncidentDeps(
                     incident_repo,
