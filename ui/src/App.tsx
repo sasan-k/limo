@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { AgentsPage } from "@/pages/AgentsPage";
 import { BoardPage } from "@/pages/BoardPage";
 import { InboxPage } from "@/pages/InboxPage";
+import { PromptsPage } from "@/pages/PromptsPage";
 
-const PAGES = { Agents: AgentsPage, Board: BoardPage, Inbox: InboxPage };
+const PAGES = { Agents: AgentsPage, Board: BoardPage, Inbox: InboxPage, Prompts: PromptsPage };
 type PageName = keyof typeof PAGES;
 
 export function App() {
