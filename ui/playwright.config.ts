@@ -13,7 +13,7 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: "npx vite --port 5174 --strictPort",
+      command: "npx vite --port 5174 --strictPort --bypass-lock",
       url: "http://127.0.0.1:5174",
       env: { LIMO_API_URL: "http://127.0.0.1:8701" },
       reuseExistingServer: false,
