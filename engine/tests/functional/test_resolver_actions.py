@@ -257,3 +257,35 @@ def test_ft_19_12_note_consumed_once(
         wait_run(client, again["run"]["id"])
     notes = [r for r in llm.requests if f"note: {fix}" in r.messages[0]["content"]]
     assert len(notes) == 1
+
+
+YAML_REPLAN = """## Reasoning
+- the plan writes ranges inside the backticks
+
+```action
+action: replan
+fix: |
+  In `## Context pack`, put line ranges after the closing backtick.
+  Write builders.py as one span.
+source: engine/limo/agents/context_pack.py:3; plans/TKT-20.md:82-85
+```
+"""
+
+
+def test_action_block_in_yaml_form_is_applied(
+    client: TestClient, tmp_path: Path, settings: Settings, llm: FakeLlm
+) -> None:
+    """A resolver answer written as an ```action block with `action:` and `key: |` lines is applied
+    like the JSON form (here: replan with a two-line fix)."""
+    add_cart_project(client, tmp_path)
+    set_status(settings, "shop", "TKT-1", "blocked")
+    llm.responder = resolver_responder(settings.skills_dir, YAML_REPLAN)
+    assert _flow(client)["reason"] == "resolved"
+    assert get_status(settings, "shop", "TKT-1") == "todo"
+    plan = client.post(STEP).json()
+    wait_run(client, plan["run"]["id"])
+    note = (
+        "note: In `## Context pack`, put line ranges after the closing backtick.\n"
+        "Write builders.py as one span."
+    )
+    assert any(note in r.messages[0]["content"] for r in llm.requests)

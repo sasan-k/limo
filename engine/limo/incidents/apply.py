@@ -28,6 +28,13 @@ def _line(value: Any, limit: int) -> bool:
     return isinstance(value, str) and 1 <= len(value) <= limit and "\n" not in value
 
 
+def _lines(value: Any, limit: int, max_lines: int) -> bool:
+    """Non-empty text of at most `limit` chars and `max_lines` lines (resolver prompt: fix ≤ 3 lines)."""
+    if not isinstance(value, str):
+        return False
+    return 1 <= len(value.strip()) <= limit and len(value.splitlines()) <= max_lines
+
+
 class ActionApplier:
     def __init__(self, board: TicketBoard, host: RepoHost, issues: IssueRepo, repo: IncidentRepo) -> None:
         self._board = board
@@ -126,7 +133,7 @@ class ActionApplier:
 
     def _replan(self, ctx: ApplyContext, action: dict[str, Any]) -> bool:
         fix = action.get("fix")
-        if not _line(fix, 500) or self._has_replan(ctx):
+        if not _lines(fix, 500, 3) or self._has_replan(ctx):
             return False
         report = (
             Path(ctx.project.workspace)
