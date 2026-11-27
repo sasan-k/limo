@@ -4,9 +4,11 @@ from typing import Literal
 
 from limo.agents.models import RunIn
 from limo.agents.service import RunService
-from limo.common.errors import ExternalError, NotFound
+from limo.common.errors import ExternalError, NotFound, Unprocessable
 from limo.features.phases import PhaseService
+from limo.hosts.issue_repo import IssueRepo
 from limo.hosts.issues import IssueService
+from limo.inbox.models import InboxItem
 from limo.inbox.service import InboxService
 from limo.incidents.models import Incident
 from limo.incidents.service import IncidentService
@@ -32,6 +34,7 @@ class RunnerDeps:
     phases: PhaseService
     issues: IssueService
     incidents: IncidentService
+    issue_repo: IssueRepo
 
 
 class RunnerService:
@@ -45,6 +48,7 @@ class RunnerService:
         self._phases = deps.phases
         self._issues = deps.issues
         self._incidents = deps.incidents
+        self._issue_repo = deps.issue_repo
         self._max_concurrent = max_concurrent
 
     def step(self, project_name: str, feature: str) -> StepResult:
@@ -90,11 +94,44 @@ class RunnerService:
         hold = self._inbox.take(hold_id)
         return self.step(hold.project, hold.feature)
 
+    def inbox(self) -> list[InboxItem]:
+        items = [InboxItem(**hold.model_dump(), link=None) for hold in self._inbox.list()]
+        for e in self._incidents.escalations():
+            project = self._projects.get_by_name(e.project)
+            issue = None
+            if project is not None:
+                issue = self._issue_repo.for_feature(project.id, e.feature).get(e.row.ticket)
+            items.append(
+                InboxItem(
+                    id=e.row.id,
+                    project=e.project,
+                    feature=e.feature,
+                    ticket=e.row.ticket,
+                    kind="escalation",
+                    reason=e.row.ask or "needs a human",
+                    created_at=e.created_at,
+                    link=None if issue is None else issue.url,
+                )
+            )
+        return sorted(items, key=lambda item: item.created_at)
+
+    def continue_item(self, item_id: str, response: str | None) -> StepResult:
+        if self._inbox.has(item_id):
+            return self.continue_hold(item_id)
+        if not self._incidents.exists(item_id):
+            raise NotFound("hold_not_found", f"item {item_id} not found")
+        if response is None:
+            raise Unprocessable("response_required", "an escalation needs a response")
+        name, feature = self._incidents.answer(item_id, response)
+        return self.step(name, feature)
+
     def poll(self, project_name: str, feature: str) -> PollResult:
         project = self._projects.get_by_name(project_name)
         if project is None:
             raise NotFound("project_not_found", f"project {project_name} not found")
-        return self._shipping.poll(project, feature)
+        result = self._shipping.poll(project, feature)
+        self._incidents.collect_replies(project, feature)
+        return result
 
     def incidents(self, project_name: str, feature: str) -> list[Incident]:
         project = self._projects.get_by_name(project_name)

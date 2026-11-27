@@ -3,8 +3,8 @@ ticket: TKT-10
 feature: limo
 scenarios: [SC-37, SC-38, SC-39, SC-53]
 scope: [runner, host]
-revision: 0
-run: all
+revision: 5  # rev 4 + continue_item check order (unknown id → 404 before response check); human chose the revision path
+run: from-STEP-11
 read: [work/limo/map.yaml, work/limo/features/resolver.feature, work/limo/questions.md#Q-6, DESIGN.md#Orchestration, context/INDEX.md, context/code-rules.md, context/security.md, context/testing.md, context/data.md, context/api.md, engine/limo/incidents/*.py, engine/limo/inbox/*.py, engine/limo/api/inbox_routes.py, engine/limo/hosts/ports.py, engine/limo/runner/service.py, engine/tests/fakes/host.py]
 ---
 # TKT-10: Escalations reach a human and replies come back
@@ -79,9 +79,10 @@ File `engine/tests/functional/test_escalations.py`. Helpers from `tests/builders
 ## Context pack
 - `engine/limo/hosts/ports.py`, `engine/limo/hosts/unconfigured.py` — STEP-1 edit
 - `engine/tests/fakes/host.py` — STEP-2 edit
-- `engine/limo/incidents/apply.py`, `engine/limo/incidents/service.py`, `engine/limo/incidents/repo.py`, `engine/limo/incidents/models.py`, `engine/limo/incidents/detect.py` — STEP-5..7 edit / read
+- `engine/limo/incidents/apply.py` — STEP-6 edit; `engine/limo/incidents/service.py`, `engine/limo/incidents/repo.py`, `engine/limo/incidents/models.py`, `engine/limo/incidents/detect.py` — STEP-5..7 edit / read
 - `engine/limo/inbox/models.py`, `engine/limo/inbox/service.py`, `engine/limo/inbox/repo.py` — STEP-8 edit / read
-- `engine/limo/api/inbox_routes.py`, `engine/limo/runner/service.py` — STEP-8 edit
+- `engine/limo/api/inbox_routes.py`, `engine/limo/runner/service.py` — STEP-8b edit
+- `engine/limo/common/errors.py` — STEP-8 edit
 - `engine/limo/hosts/issue_repo.py`, `engine/limo/common/errors.py`, `engine/limo/projects/models.py`, `engine/limo/store/db.py` — read
 - `engine/limo/app.py` — STEP-9 edit
 - `engine/tests/builders.py`, `engine/tests/conftest.py`, `engine/tests/fakes/llm.py`, `engine/tests/functional/test_resolver_actions.py` — read (flow pattern)
@@ -117,27 +118,76 @@ ALTER TABLE incidents ADD COLUMN last_comment_id TEXT;
 - do: `Incident` gains `id`, `human_input: bool`; `IncidentRow` gains `ask`, `reply`, `human_input: bool`, `last_comment_id`; `IncidentRow` keeps defaults so existing constructors work. Repo: `resolver_count(project_id, feature, ticket) -> int` (`resolver_run_id IS NOT NULL AND human_input = 0`); `set_ask(id, ask)`; `set_reply(id, reply, comment_id)`; `awaiting_reply(project_id, feature) -> list[IncidentRow]` (`needs_human`, `reply IS NULL`); `replied(project_id, feature) -> list[IncidentRow]` (`needs_human`, `reply IS NOT NULL`); `get(id) -> IncidentRow | None`; `escalations() -> list[tuple[IncidentRow, str, str]]` (row, project name, feature; `needs_human` and `reply IS NULL`, join projects); `blocking_tickets` = `open` or (`needs_human` and `reply IS NULL`)
 - verify: `cd engine && uv run python -c "import limo.incidents.repo"` → exit 0
 
-### STEP-6 escalation comment
+### STEP-6 escalation comment (revision 1: verify r0 — reason passed in)
 - file: `engine/limo/incidents/apply.py` (edit)
-- do: `_escalate(ctx, summary, ask)` adds the comment (Design) after the label and calls `repo.set_ask`; `apply` passes the action's `summary`/`ask` when the type is `escalate`, else the default texts with `<reason>` = `invalid action` / `resolver run failed` / `action could not be applied`; expose `escalate(ctx, summary, ask)` publicly for the limit path
+- do:
+  - change the signature to `apply(self, ctx: ApplyContext, action: dict[str, Any] | None, run_failed: bool = False)`
+  - replace the existing `self._escalate(ctx)` call in `apply` with:
+```python
+            if action is not None and action.get("type") == "escalate":
+                summary, ask = str(action.get("summary", "")), str(action.get("ask", ""))
+            else:
+                reason = "resolver run failed" if run_failed else (
+                    "invalid action" if action is None else "action could not be applied"
+                )
+                summary = f"Resolver could not act ({reason})"
+                ask = f"What should Limo do with {ctx.incident.ticket}?"
+            self.escalate(ctx, summary, ask)
+```
+  - rename `_escalate(self, ctx)` to public `escalate(self, ctx, summary: str, ask: str)`: after adding the label, call `self._host.comment_issue(hp, issue.number, f"Limo needs a human.\n\n{summary}\n\nQuestion: {ask}")`, then `self._repo.set_ask(ctx.incident.id, ask)`
 - verify: `cd engine && uv run python -c "import limo.incidents.apply"` → exit 0
 
 ### STEP-7 limit, replies, follow-up
 - file: `engine/limo/incidents/service.py`, `engine/limo/incidents/detect.py` (edit)
-- do: in `_open`, if `repo.resolver_count(...) >= 2` → add the row as `needs_human` (no resolver run), call `applier.escalate(ctx, f"{ticket} is still stuck after 2 resolver attempts", f"What should Limo do with {ticket}?")`, return `StepResult(run=None, reason="needs_human")`. Add `collect_replies(project, feature)`: for each `awaiting_reply` row with an issue: `host.issue_comments(...)`; first comment after `last_comment_id` (all if None) with `mine` False → `set_reply`; `HostError` → `ExternalError("host_error", …)`; the applier exposes `host`, `issues` for this (or pass them via `IncidentDeps` — add fields `host`, `issues`). In `handle`, before `_open_next`: first `replied` row → close it `resolved`, open a follow-up row (`trigger="human-reply"`, `human_input=True`, k = count + 1), bundle lines + `- human reply: <reply>`, start the resolver run, return `resolving`. Add `answer(incident_id, response) -> tuple[str, str]` (project name, feature): row missing → `NotFound("hold_not_found", …)`; not `needs_human` or already has a reply → `Conflict("hold_cleared", …)`; post `response` with `host.comment_issue`; `set_reply(id, response, None)`.
+- do: in `_apply`, call `self._applier.apply(ctx, action, run_failed=run.status == "failed")`. In `_open`, if `repo.resolver_count(...) >= 2` → add the row as `needs_human` (no resolver run), call `applier.escalate(ctx, f"{ticket} is still stuck after 2 resolver attempts", f"What should Limo do with {ticket}?")`, return `StepResult(run=None, reason="needs_human")`. Add `collect_replies(project, feature)`: for each `awaiting_reply` row with an issue: `host.issue_comments(...)`; first comment after `last_comment_id` (all if None) with `mine` False → `set_reply`; `HostError` → `ExternalError("host_error", …)`; the applier exposes `host`, `issues` for this (or pass them via `IncidentDeps` — add fields `host`, `issues`). In `handle`, before `_open_next`: first `replied` row → close it `resolved`, open a follow-up row (`trigger="human-reply"`, `human_input=True`, k = count + 1), bundle lines + `- human reply: <reply>`, start the resolver run, return `resolving`. Add `answer(incident_id, response) -> tuple[str, str]` (project name, feature): row missing → `NotFound("hold_not_found", …)`; not `needs_human` or already has a reply → `Conflict("hold_cleared", …)`; post `response` with `host.comment_issue`; `set_reply(id, response, None)`.
 - verify: `cd engine && uv run python -c "import limo.incidents.service"` → exit 0
 
-### STEP-8 inbox + continue + poll
-- file: `engine/limo/inbox/models.py`, `engine/limo/inbox/service.py`, `engine/limo/runner/service.py`, `engine/limo/api/inbox_routes.py` (edit)
-- do: rename `Hold` → keep `Hold` for budget rows and add `InboxItem` (Design); `ContinueIn` (`response: str | None = Field(default=None, min_length=1, max_length=2000)`, `extra="forbid"`). `RunnerService.inbox() -> list[InboxItem]` = budget holds (`link` None) + escalations (`reason` = ask or "needs a human", `link` = issue url from `IssueRepo` when present), ordered by `created_at`. `RunnerService.continue_item(item_id, response)`: hold exists → `continue_hold` (TKT-17); else incident: `response` None → `ExternalError`-free `LimoError` subclass with status 422 code `response_required` (add `Unprocessable(LimoError)` status 422 to `common/errors.py`); `project, feature = incidents.answer(id, response)`; `return self.step(project, feature)`. `RunnerService.poll` calls `incidents.collect_replies(project, feature)` after shipping poll. Routes: `GET /api/inbox` → `list[InboxItem]`; `POST /api/inbox/{item_id}/continue` with optional body `ContinueIn | None = None`.
+### STEP-8 escalations carry project, feature and time (revision 3)
+- file: `engine/limo/incidents/repo.py`, `engine/limo/incidents/service.py`, `engine/limo/common/errors.py` (edit)
+- do:
+  - add a frozen dataclass to `incidents/repo.py`: `Escalation(row: IncidentRow, project: str, feature: str, created_at: str)`
+  - `IncidentRepo.escalations()` returns `list[Escalation]`; its SELECT adds `i.created_at`; build each item as
+```python
+        result = []
+        for r in rows:
+            data = dict(r)
+            project, feature, created_at = data.pop("project"), data.pop("feature"), data.pop("created_at")
+            result.append(Escalation(_row(data), str(project), str(feature), str(created_at)))
+        return result
+```
+    (`_row` accepts a plain dict as well as a row)
+  - in `IncidentService.answer` replace `row, name, feature = match` with `row, name, feature = match.row, match.project, match.feature`, and the `next(...)` matcher with `next((e for e in self._repo.escalations() if e.row.id == incident_id), None)`
+  - `common/errors.py`: add `class Unprocessable(LimoError): status = 422`
+- verify: `cd engine && uv run python -c "import limo.incidents.service, limo.common.errors"` → exit 0
+
+### STEP-8b inbox items, continue with a response, poll collects replies (revision 3)
+- file: `engine/limo/inbox/models.py`, `engine/limo/runner/service.py`, `engine/limo/api/inbox_routes.py` (edit)
+- do:
+  - `inbox/models.py`: keep `Hold`; add `InboxItem(BaseModel)`: `id, project, feature, ticket: str`, `kind: Literal["budget", "escalation"]`, `reason: str`, `created_at: str`, `link: str | None = None`; add `ContinueIn(BaseModel)`: `model_config = ConfigDict(extra="forbid")`, `response: str | None = Field(default=None, min_length=1, max_length=2000)`
+  - `RunnerService`: `RunnerDeps` gains `issue_repo: IssueRepo` (from `limo.hosts.issue_repo`; the existing `issues: IssueService` field stays). Add
+    - `inbox() -> list[InboxItem]`: budget holds from `self._inbox.list()` → `InboxItem(**hold.model_dump(), link=None)`; escalations from `self._incidents.escalations()` (add a pass-through method `escalations()` on `IncidentService` returning the repo list) → `InboxItem(id=e.row.id, project=e.project, feature=e.feature, ticket=e.row.ticket, kind="escalation", reason=e.row.ask or "needs a human", created_at=e.created_at, link=<issue url or None>)` where the url comes from `self._issue_repo.for_feature(<project id>, e.feature).get(e.row.ticket)` (project id via `self._projects.get_by_name(e.project)`); return all items sorted by `created_at`
+    - `continue_item(item_id: str, response: str | None) -> StepResult`: if `self._inbox.has(item_id)` (add `InboxService.has(hold_id) -> bool` = the repo `get` is not None) → `return self.continue_hold(item_id)`; else if `response is None` → `raise Unprocessable("response_required", "an escalation needs a response")`; else `name, feature = self._incidents.answer(item_id, response)` and `return self.step(name, feature)`
+    - in `poll`, after `result = self._shipping.poll(project, feature)`: `self._incidents.collect_replies(project, feature)`; return `result`
+  - `api/inbox_routes.py`: `inbox_router(runner: RunnerService)`: `GET /api/inbox` → `list[InboxItem]` = `runner.inbox()`; `POST /api/inbox/{item_id}/continue` with `body: ContinueIn | None = None` → `runner.continue_item(item_id, body.response if body else None)`
+- also edit: `engine/limo/inbox/service.py` (add `has`)
 - verify: `cd engine && uv run python -c "import limo.api.inbox_routes"` → exit 0
 
 ### STEP-9 wiring
 - file: `engine/limo/app.py` (edit)
-- do: pass `host` and the `IssueRepo` into `IncidentDeps` as needed; `inbox_router(runner)` signature follows STEP-8 (keep `InboxService` where it is used)
+- do: pass `host`, `IssueRepo(db)` and `ProjectRepo(db)` into `IncidentDeps` (fields added in STEP-7); add `issue_repo=IssueRepo(db)` to `RunnerDeps`; call `inbox_router(runner)`
 - verify: `mise run test:engine` → all passed
 
 ### STEP-10 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates` (up to 3 fix rounds), `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` all passed
+
+### STEP-11 unknown ids are 404 before the response check (revision 5)
+- file: `engine/limo/runner/service.py` (edit), `engine/limo/incidents/service.py` (edit)
+- do: add `IncidentService.exists(incident_id: str) -> bool` (= `self._repo.get(incident_id) is not None`). In `RunnerService.continue_item`, right after the hold branch, add `if not self._incidents.exists(item_id): raise NotFound("hold_not_found", f"item {item_id} not found")` before the `response is None` check; change nothing else
+- verify: `mise run test:engine` → all passed
+
+### STEP-12 format, gates, full suite
 - file: none new (edit only lines a gate reports, in files this plan created or edited)
 - do: `mise run fmt`, `mise run gates` (up to 3 fix rounds), `mise run test`; never add `# noqa`
 - verify: gates exit 0; `mise run test` all passed

@@ -112,7 +112,19 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
             git,
             PhaseService(feature_repo, runs, board),
             IssueService(deps.host or UnconfiguredHost(), IssueRepo(settings.db_path), board),
-            IncidentService(IncidentDeps(incident_repo, runs, board, applier), settings.run_timeout_s),
+            IncidentService(
+                IncidentDeps(
+                    incident_repo,
+                    runs,
+                    board,
+                    applier,
+                    host,
+                    IssueRepo(settings.db_path),
+                    ProjectRepo(settings.db_path),
+                ),
+                settings.run_timeout_s,
+            ),
+            issue_repo=IssueRepo(settings.db_path),
         ),
         settings.max_concurrent_tickets,
     )
@@ -137,7 +149,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     app.include_router(runner_router(runner))
     app.include_router(incidents_router(runner))
     app.include_router(budget_router(budget))
-    app.include_router(inbox_router(inbox, runner))
+    app.include_router(inbox_router(runner))
     app.include_router(features_router(features))
     return app
 

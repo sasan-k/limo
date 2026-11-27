@@ -3,13 +3,22 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from limo.hosts.ports import HostError, HostProject, IssueRef, MergeRequestRef, MrStatus, ReviewComment
+from limo.hosts.ports import (
+    HostError,
+    HostProject,
+    IssueComment,
+    IssueRef,
+    MergeRequestRef,
+    MrStatus,
+    ReviewComment,
+)
 
 
 @dataclass
 class FakeIssue:
     title: str
     labels: list[str]
+    comments: list[IssueComment] = field(default_factory=list)
 
 
 @dataclass
@@ -79,6 +88,21 @@ class FakeHost:
         if label not in issue.labels:
             issue.labels.append(label)
         self.calls.append(("add_issue_label", number))
+
+    def comment_issue(self, project: HostProject, number: int, body: str) -> None:
+        self._check("comment_issue")
+        issue = self.issues[number]
+        issue.comments.append(IssueComment(f"k{len(issue.comments) + 1}", body, True))
+        self.calls.append(("comment_issue", number))
+
+    def issue_comments(self, project: HostProject, number: int) -> list[IssueComment]:
+        self._check("issue_comments")
+        self.calls.append(("issue_comments", number))
+        return list(self.issues[number].comments)
+
+    def reply(self, number: int, body: str) -> None:
+        issue = self.issues[number]
+        issue.comments.append(IssueComment(f"k{len(issue.comments) + 1}", body, False))
 
     def approve(self, number: int) -> None:
         self.mrs[number].approved = True
