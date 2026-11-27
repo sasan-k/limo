@@ -65,3 +65,13 @@ class TicketBoard:
             raise Conflict("map_invalid", _first_line(str(e))) from e
         if result.code != 0:
             raise Conflict("map_invalid", _first_line(result.stderr))
+
+    def map_check(self, workspace: Path, project: str, feature: str) -> bool:
+        env = {"FX_DB": str(self._fx_db), "FX_SCOPE": project}
+        try:
+            result = self._executor.run(
+                ["fx", "map-check", f"work/{feature}"], workspace, self._timeout_s, env=env
+            )
+        except ExecutorError:
+            return False
+        return result.code == 0

@@ -111,14 +111,8 @@ def write_workspace_file(settings: Settings, project: str, rel: str, text: str) 
     path.write_text(text)
 
 
-def start_and_wait(
-    client: TestClient, agent: str, ticket: str | None = "TKT-1", project: str = "shop"
-) -> dict[str, Any]:
-    """POST a run for feature cart and poll GET /api/runs/{id} until it is succeeded or failed (5 s max)."""
-    body = {"agent": agent, "feature": "cart", "ticket": ticket}
-    r = client.post(f"/api/projects/{project}/runs", json=body)
-    assert r.status_code == 202
-    run_id = r.json()["id"]
+def wait_run(client: TestClient, run_id: str) -> dict[str, Any]:
+    """Poll GET /api/runs/{id} until it is succeeded or failed (5 s max)."""
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         run = client.get(f"/api/runs/{run_id}").json()
@@ -126,6 +120,16 @@ def start_and_wait(
             return run
         time.sleep(0.02)
     raise AssertionError(f"run {run_id} did not finish")
+
+
+def start_and_wait(
+    client: TestClient, agent: str, ticket: str | None = "TKT-1", project: str = "shop"
+) -> dict[str, Any]:
+    """POST a run for feature cart and wait for it to finish (see wait_run)."""
+    body = {"agent": agent, "feature": "cart", "ticket": ticket}
+    r = client.post(f"/api/projects/{project}/runs", json=body)
+    assert r.status_code == 202
+    return wait_run(client, r.json()["id"])
 
 
 def drive_to_review(client: TestClient, llm: FakeLlm, settings: Settings, project: str = "shop") -> None:

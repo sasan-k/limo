@@ -3,8 +3,8 @@ ticket: TKT-6
 feature: limo
 scenarios: [SC-19, SC-20, SC-21, SC-49, SC-59]
 scope: [runner, api, host]
-revision: 0
-run: all
+revision: 1
+run: from-STEP-11
 read: [work/limo/map.yaml, work/limo/features/runner.feature, work/limo/questions.md#Q-2#Q-10, DESIGN.md#Orchestration, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/api.md, context/data.md, ADR-3:L2, ADR-6:L2, engine/limo/runner/service.py, engine/limo/runner/tickets.py, engine/limo/agents/repo.py, engine/limo/agents/service.py, engine/limo/agents/models.py, engine/limo/projects/service.py, skills/architecture/SKILL.md (modes)]
 ---
 # TKT-6: An intake form starts a feature locally; architecture and spec run before tickets
@@ -85,6 +85,7 @@ All in `engine/tests/functional/test_features.py`. Paths: `F = "/api/projects/<p
 - `engine/limo/api/runner_routes.py` — like: router with path patterns
 - `engine/limo/app.py` — STEP-9 edit
 - `engine/limo/common/errors.py`, `engine/limo/store/db.py` — read
+- `engine/limo/vcs/git.py` — STEP-11 edit
 - `engine/tests/builders.py` — STEP-1 edit; `engine/tests/conftest.py`, `engine/tests/fakes/llm.py`, `engine/tests/fakes/host.py` — read
 
 ## Steps
@@ -156,9 +157,19 @@ CREATE INDEX runs_project_feature_agent ON runs (project_id, feature, agent);
 - do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
 - verify: gates exit 0; `mise run test` → 100 passed
 
+### STEP-11 git add works with `work/` ignored (revision 1: verify r0)
+- file: `engine/limo/vcs/git.py` (edit)
+- do: in `commit_and_push`, replace the `add -A -- . :(exclude)work` call with two calls: `add -A` (code ≠ 0 → `GitError`) and `reset -q -- work` (ignore its exit code); change nothing else
+- verify: `mise run test:engine` → 100 passed
+
+### STEP-12 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` → 100 passed
+
 ## Do not
 - commit anything under `work/`; push `context/` changes outside a ticket branch
-- change ticket dispatch, shipping or polling
+- change ticket dispatch, shipping or polling (except STEP-11's add command)
 - add UI or the runner on/off switch
 - add `# noqa`
 

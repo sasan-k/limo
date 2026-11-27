@@ -24,6 +24,7 @@
 ## Data
 - secrets: Anthropic key, GitLab/GitHub tokens from `.env` / environment only; never in code, db, logs, prompts, or fixtures
 - PII: none stored beyond repo-host usernames in comments
+- `work/` is local: added to `.git/info/exclude` at project add; commits run `git add -A` then `git reset -- work` (`engine/limo/vcs/git.py`)
 - prompt bodies and diffs are not logged at INFO
 
 ## Abuse / runaway cost

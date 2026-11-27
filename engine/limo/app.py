@@ -14,6 +14,7 @@ from limo.api.agents_routes import agents_router
 from limo.api.budget_routes import budget_router
 from limo.api.cost_routes import cost_router
 from limo.api.errors import install_error_handlers
+from limo.api.features_routes import features_router
 from limo.api.inbox_routes import inbox_router
 from limo.api.projects_routes import projects_router
 from limo.api.runner_routes import runner_router
@@ -26,6 +27,9 @@ from limo.cost.repo import PriceRepo, UsageRepo
 from limo.cost.service import CostService
 from limo.executor.local import LocalExecutor
 from limo.executor.ports import Executor
+from limo.features.phases import PhaseService
+from limo.features.repo import FeatureRepo
+from limo.features.service import FeatureService
 from limo.hosts.ports import RepoHost
 from limo.hosts.repo import MergeRequestRepo
 from limo.hosts.unconfigured import UnconfiguredHost
@@ -69,6 +73,8 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         (to_micros(settings.default_ticket_budget), to_micros(settings.default_agent_budget)),
     )
     inbox = InboxService(HoldRepo(settings.db_path))
+    feature_repo = FeatureRepo(settings.db_path)
+    features = FeatureService(feature_repo, ProjectRepo(settings.db_path))
     runs = RunService(
         RunStores(
             RunRepo(settings.db_path),
@@ -88,7 +94,15 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         git, deps.host or UnconfiguredHost(), MergeRequestRepo(settings.db_path), board
     )
     runner = RunnerService(
-        RunnerDeps(runs, ProjectRepo(settings.db_path), board, inbox, shipping, git),
+        RunnerDeps(
+            runs,
+            ProjectRepo(settings.db_path),
+            board,
+            inbox,
+            shipping,
+            git,
+            PhaseService(feature_repo, runs, board),
+        ),
         settings.max_concurrent_tickets,
     )
 
@@ -112,6 +126,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     app.include_router(runner_router(runner))
     app.include_router(budget_router(budget))
     app.include_router(inbox_router(inbox, runner))
+    app.include_router(features_router(features))
     return app
 
 

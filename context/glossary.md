@@ -22,6 +22,7 @@
 | Intake form | UI form where a user pastes a feature's requirements | `IntakeForm` | Inbox |
 | Issue | Repo-host issue mirroring one ticket | `Issue` | Ticket |
 | Merge request | GitLab MR or GitHub PR for one ticket branch | `MergeRequest` | Issue |
+| Phase | A feature's stage before tickets: architecture, spec, nfr, then tickets | `phase` | Stage |
 | Poll | Periodic check of the repo host for approvals, merges, CI and replies | `poll` | Run |
 | Price table | $/MTok per model and token kind | `Price` | Cost |
 | Project | A target project the app works on (git URL + workspace) | `Project` | Feature |

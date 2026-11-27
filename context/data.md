@@ -30,6 +30,7 @@
 - `usage` — one row per Messages API call: run_id, project_id, agent, feature, ticket, seq, model, 4 token kinds, cost_micros, priced — `004_cost.sql`; cost fixed when recorded (Q-7)
 - `tool_calls` — run_id, seq, name, target, status (ok|error|rejected), summary, created_at — `002_runs.sql`
 - `budget_defaults` (singleton), `ticket_budgets` (project_id, feature, ticket, agent '' = ticket), `holds` (open = `cleared_at` NULL) — `006_budgets_holds.sql`; budget reached = spent ≥ budget
+- `features` — project_id, name (unique per project), phase (architecture|spec|nfr|tickets) — `008_features.sql`; `runs.args` added there
 - `merge_requests` — project_id, feature, ticket, number, url, branch, state (open|merged|closed), last_review_id, needs_push — `007_merge_requests.sql`
 - `incidents` — stuck event, resolver report path, applied action
 - `prices` — model (PK), input/output/cache_read/cache_write micros per MTok — `004_cost.sql`; no price → cost 0, `priced = 0`

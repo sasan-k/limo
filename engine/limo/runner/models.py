@@ -7,7 +7,7 @@ from limo.agents.models import Run
 
 class StepResult(BaseModel):
     run: Run | None
-    reason: Literal["started", "run_active", "no_ready_ticket", "shipped"]
+    reason: Literal["started", "run_active", "no_ready_ticket", "shipped", "stage_failed"]
 
 
 class PollResult(BaseModel):
