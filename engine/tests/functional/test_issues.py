@@ -139,3 +139,16 @@ def test_ft_8_7_label_failure_is_502_then_retried(
     _run_step(client, "cart")
     _, issue = _issue_by_title(host, "TKT-1: Cart shows a total")
     assert "limo:planned" in issue.labels
+
+
+def test_issue_sync_skips_tickets_finished_before_first_sync(
+    client: TestClient, host: FakeHost, settings: Settings, tmp_path: Any
+) -> None:
+    """Tickets already done or abandoned when first seen get no issue; open tickets still do."""
+    add_cart_project(client, tmp_path)
+    set_status(settings, "shop", "TKT-1", "done")
+    set_status(settings, "shop", "TKT-3", "abandoned")
+    _run_step(client, "cart")
+    assert [i.title for i in host.issues.values()] == ["TKT-2: Cart total includes tax"]
+    _run_step(client, "cart")
+    assert len(host.issues) == 1
