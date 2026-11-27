@@ -34,7 +34,7 @@ argument-hint: <feature> TKT-n
    | build | build_tries < 2 | `set … status=planned` (Build retries) |
    | build | build_tries ≥ 2 | treat as plan |
    | plan | plan_tries < 1 | `set … status=todo build_tries=0` (Plan revises) |
-   | plan | plan_tries ≥ 1 | `set … status=blocked` → human |
+   | plan | plan_tries ≥ 1 | `set … status=blocked` → resolver (runner opens an incident), human only if it escalates |
    | spec | any | add question to `questions.md`, `set … status=blocked` |
 8. Write `work/<feature>/reports/TKT-n-verify-r<rev>-<try>.md` (same `<rev>-<try>` as build report) from `templates/verify-report.md` (this skill dir).
 
