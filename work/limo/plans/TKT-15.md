@@ -3,8 +3,8 @@ ticket: TKT-15
 feature: limo
 scenarios: [SC-45]
 scope: [ui, cost]
-revision: 0
-run: all
+revision: 1
+run: from-STEP-3
 read: [work/limo/map.yaml, work/limo/features/ui.feature#SC-45, work/limo/reqs.md#REQ-44, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/api.md, work/limo/plans/TKT-4.md#Design, engine/limo/api/cost_routes.py, engine/limo/cost/service.py:60-82, engine/limo/cost/repo.py:123-133, engine/tests/functional/test_cost.py, ui/src/**, ui/tests/harness.tsx]
 ---
 # TKT-15: Cost view shows the four totals
@@ -161,9 +161,9 @@ test("FT-15.4 unknown project shows the engine's message", async () => {
 ```
 - verify: `mise run test:ui -- -t "FT-15"` → `FAIL: no button named "Cost"`
 
-### STEP-3 Shared Select and project picker
-- file: `ui/src/components/Select.tsx`, `ui/src/api/projects.ts` (create)
-- do: `ui/src/components/Select.tsx`:
+### STEP-3 Shared Select, project picker, CostTotals type
+- file: `ui/src/components/Select.tsx`, `ui/src/api/projects.ts` (create); `ui/src/api/types.ts` (edit)
+- do: `ui/src/api/types.ts`: add `export type CostTotals = components["schemas"]["CostTotals"];` (before the `Board` line). `ui/src/components/Select.tsx`:
 ```tsx
 /** Labelled native select styled with theme tokens. */
 export function Select(props: {
@@ -271,7 +271,7 @@ export function BoardPage() {
 - verify: `mise run test:ui -- -t "FT-13|FT-14"` → all pass
 
 ### STEP-5 Cost page
-- file: `ui/src/components/CostTable.tsx`, `ui/src/pages/CostPage.tsx` (create); `ui/src/api/types.ts`, `ui/src/api/events.ts`, `ui/src/App.tsx` (edit)
+- file: `ui/src/components/CostTable.tsx`, `ui/src/pages/CostPage.tsx` (create); `ui/src/api/events.ts`, `ui/src/App.tsx` (edit)
 - do: `ui/src/components/CostTable.tsx`:
 ```tsx
 import { formatUsd } from "@/lib/format";
@@ -350,7 +350,7 @@ export function CostPage() {
   );
 }
 ```
-  `types.ts`: add `export type CostTotals = components["schemas"]["CostTotals"];`. `events.ts`: `"run.finished"` list gains `["costs"]`; `"cost.updated"` becomes `[["agent-cards"], ["costs"]]`. `App.tsx`: import `CostPage` from `@/pages/CostPage`; `PAGES` gains `Cost: CostPage` as the last entry.
+  `events.ts`: `"run.finished"` list gains `["costs"]`; `"cost.updated"` becomes `[["agent-cards"], ["costs"]]`. `App.tsx`: import `CostPage` from `@/pages/CostPage`; `PAGES` gains `Cost: CostPage` as the last entry.
 - verify: `mise run test:ui` → 18 passed
 
 ### STEP-6 E2E cost page

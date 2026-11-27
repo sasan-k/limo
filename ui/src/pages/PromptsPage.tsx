@@ -6,23 +6,7 @@ import { fileUrl } from "@/api/prompts";
 import type { Agent, PromptFile } from "@/api/types";
 import { PromptEditor } from "@/components/PromptEditor";
 import { PromptHistory } from "@/components/PromptHistory";
-
-function Select(props: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
-  return (
-    <label className="flex items-center gap-2 text-sm">
-      {props.label}
-      <select
-        className="rounded-md border border-border bg-background px-2 py-1"
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value)}
-      >
-        {props.options.map((o) => (
-          <option key={o}>{o}</option>
-        ))}
-      </select>
-    </label>
-  );
-}
+import { Select } from "@/components/Select";
 
 /** View and edit each agent's prompt and reference files, with versions (REQ-42, REQ-43). */
 export function PromptsPage() {

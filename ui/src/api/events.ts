@@ -5,9 +5,9 @@ import { useEffect } from "react";
 export const INVALIDATES: Record<string, QueryKey[]> = {
   "run.started": [["agent-cards"]],
   "run.updated": [["agent-cards"]],
-  "run.finished": [["agent-cards"], ["board"], ["inbox"]],
+  "run.finished": [["agent-cards"], ["board"], ["inbox"], ["costs"]],
   "incident.opened": [["agent-cards"], ["board"], ["inbox"]],
-  "cost.updated": [["agent-cards"]],
+  "cost.updated": [["agent-cards"], ["costs"]],
   "ticket.changed": [["board"]],
   "prompt.saved": [["prompt"], ["prompt-history"]],
 };
