@@ -24,8 +24,8 @@ categories: happy, validation, not-found, conflict, invalid-state, idempotency, 
 - engine: `engine/tests/functional/`; pytest; run one: `mise run test:engine -- -k ft_<t>_<k>`
 - app under test: in-process `create_app(settings, deps)` with fakes injected; httpx `TestClient`
 - isolation: fresh temp dir per test (db, workspaces, bare git remote)
-- UI e2e: `ui/e2e/` Playwright; `ui/playwright.config.ts` starts `engine/tests/e2e_app.py` (fakes, temp data dir) on 8701 + vite on 5174; run: `mise run test:e2e`
-- UI component: Vitest in `ui/tests/`; harness `ui/tests/harness.tsx` (`serveCards`, `renderApp`, `card`, `FakeEventSource.emit`); run one: `mise run test:ui -- -t "FT-<t>.<k>"`
+- UI e2e: `ui/e2e/` Playwright; `ui/playwright.config.ts` starts `engine/tests/e2e_app.py` (fakes, temp data dir, seeded project `shop` with the cart map) on 8701 + vite on 5174; run: `mise run test:e2e`
+- UI component: Vitest in `ui/tests/`; harness `ui/tests/harness.tsx` (`serveCards`, `serveApi(routes)` — GET by path, `"POST <path>"` → `{status, body}`, returns recorded calls — `renderApp`, `card`, `FakeEventSource.emit`); run one: `mise run test:ui -- -t "FT-<t>.<k>"`
 - engine SSE: `client.stream("GET", "/api/events")`, read `": connected"` first, then `next_event(lines, type)` (`tests/builders.py`); set a short `sse_heartbeat_s` in the test's settings
 - reference test: `engine/tests/functional/test_projects.py`; builders: `engine/tests/builders.py` (`make_git_repo`, `add_cart_project`, `start_and_wait`, `set_status`, `get_status`, `write_workspace_file`, `fx_env`); fake `stage_responder` acts as each stage agent; `resolver_responder(skills_dir, action_text)`, `blocking_build(skills_dir, seconds)`; a restart = a second `create_app` on the same settings
 

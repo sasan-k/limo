@@ -8,3 +8,13 @@ EVENT_TYPES: tuple[str, ...] = (
     "cost.updated",
     "prompt.saved",
 )
+TICKET_STATUSES: tuple[str, ...] = (
+    "todo",
+    "planned",
+    "built",
+    "verified",
+    "review",
+    "done",
+    "blocked",
+    "abandoned",
+)

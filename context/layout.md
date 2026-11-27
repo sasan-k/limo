@@ -6,7 +6,7 @@
 skills/<agent>/SKILL.md + templates/   # agent prompts + reference files (edited from the UI)
 scripts/fx.py                          # ticket state + checks CLI (stdlib only)
 engine/                                # Python package `limo`, pyproject.toml, uv.lock
-  limo/{api,agents,llm,features,incidents,cost,budget,inbox,runner,hosts,vcs,projects,executor,store,common,cards,events}/
+  limo/{api,agents,llm,features,incidents,cost,budget,inbox,runner,hosts,vcs,projects,executor,store,common,cards,events,board}/
   limo/app.py  limo/config.py
   tests/functional/  tests/fakes/  tests/unit/
 ui/                                    # React SPA (Vite)
@@ -40,7 +40,7 @@ mise.toml  .env.example                # tools, tasks, config template
 ## Wiring
 - `engine/limo/app.py` — app factory `create_app(settings, deps)`: builds adapters, injects into services, mounts routers
 - `engine/limo/agents/registry.py` — agent → prompt + reference paths (model, tool allowlist: planned)
-- `ui/src/main.tsx` — query client + app (no router yet)
+- `ui/src/main.tsx` — query client + app; `ui/src/App.tsx` switches pages (Agents · Board · Inbox) by nav state, no router
 
 ## Do not touch
 - `ui/src/components/ui/` — shadcn/ui sources; regenerate instead of editing
