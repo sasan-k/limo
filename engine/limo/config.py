@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     )
     default_model: str = "claude-opus-5-5"
     max_turns: int = 50
+    default_ticket_budget: float = 10.0
+    default_agent_budget: float = 5.0
 
     @property
     def db_path(self) -> Path:

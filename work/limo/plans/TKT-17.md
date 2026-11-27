@@ -3,8 +3,8 @@ ticket: TKT-17
 feature: limo
 scenarios: [SC-55, SC-56, SC-57, SC-58]
 scope: [cost, runner, api]
-revision: 0
-run: all
+revision: 2  # past the re-plan limit; started by the orchestrator under "keep going", flagged to the user
+run: from-STEP-12
 read: [work/limo/map.yaml, work/limo/features/budget.feature, work/limo/questions.md#Q-12, context/INDEX.md, context/code-rules.md, context/security.md, context/performance.md, context/testing.md, context/api.md, context/data.md, context/layout.md, ADR-3:L2, ADR-4:L2, engine/limo/agents/service.py, engine/limo/cost/repo.py, engine/limo/cost/service.py, engine/limo/cost/pricing.py, engine/limo/runner/service.py, engine/limo/app.py, engine/limo/config.py, engine/tests/builders.py]
 ---
 # TKT-17: Ticket and agent budgets stop work and can be raised
@@ -60,7 +60,7 @@ read: [work/limo/map.yaml, work/limo/features/budget.feature, work/limo/question
 | OP-6 continue `POST /api/inbox/{id}/continue` | FT-17.4 | n/a: id is opaque | FT-17.13 | FT-17.13 | FT-17.5 | n/a: a second continue is `hold_cleared` (FT-17.13) | n/a: single item | n/a: no external call |
 
 ## Functional tests
-All in `engine/tests/functional/test_budget.py`. Opus price `{"input": 4, "output": 20}` is set in every test that runs agents. Read money as strings (`"5.000000"`), reasons as exact text, errors as `r.json()["error"]["code"]`. Ticket statuses via `set_status`; runs via `start_and_wait` or the runner step. Paths: `B = "/api/projects/shop/features/cart/tickets/TKT-1/budget"`.
+All in `engine/tests/functional/test_budget.py`. Opus price `{"input": 4, "output": 20}` is set in every test that runs agents. Read money as strings (`"5.000000"`), reasons as exact text, errors as `r.json()["error"]["code"]`. Ticket statuses via `set_status`; runs via `start_and_wait` or the runner step. Paths: `B = "/api/projects/shop/features/cart/tickets/TKT-1/budget"`; runner step = `POST /api/projects/shop/features/cart/step` → `{"run": Run | null, "reason": "started" | "run_active" | "no_ready_ticket"}`; continue returns that same shape.
 
 | FT | Covers | File | Given (via production action) | When | Then (observable) |
 |---|---|---|---|---|---|
@@ -90,6 +90,7 @@ All in `engine/tests/functional/test_budget.py`. Opus price `{"input": 4, "outpu
 - `engine/limo/config.py` — STEP-3 edit
 - `engine/limo/app.py` — STEP-10 edit
 - `engine/tests/builders.py`, `engine/tests/conftest.py`, `engine/tests/fakes/llm.py` — read
+- `engine/tests/functional/test_budget.py` — STEP-13 edit
 
 ## Steps
 ### STEP-1 tests (test first)
@@ -181,6 +182,21 @@ CREATE INDEX usage_ticket_agent ON usage (project_id, feature, ticket, agent);
 - verify: `mise run test:engine` → all pass (60 earlier + 13 FT-17)
 
 ### STEP-11 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` → 73 passed
+
+### STEP-12 typed sums (revision 2)
+- file: `engine/limo/cost/repo.py` (edit)
+- do: in `ticket_spent` return `int(row[0])`; in `agent_spent` build the dict as `{str(r[0]): int(r[1]) for r in rows}`
+- verify: `mise run types` → `Success`
+
+### STEP-13 FT-17.2 checks no resolver run (revision 2)
+- file: `engine/tests/functional/test_budget.py` (edit)
+- do: in FT-17.2 add: every request recorded by the fake LLM during the test has a `system` different from `(settings.skills_dir / "resolver" / "SKILL.md").read_text()`
+- verify: `mise run test:engine -- -k ft_17_2` → passed
+
+### STEP-14 format, gates, full suite
 - file: none new (edit only lines a gate reports, in files this plan created or edited)
 - do: `mise run fmt`, `mise run gates`, `mise run test`; never add `# noqa`
 - verify: gates exit 0; `mise run test` → 73 passed

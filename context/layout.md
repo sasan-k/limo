@@ -6,7 +6,7 @@
 skills/<agent>/SKILL.md + templates/   # agent prompts + reference files (edited from the UI)
 scripts/fx.py                          # ticket state + checks CLI (stdlib only)
 engine/                                # Python package `limo`, pyproject.toml, uv.lock
-  limo/{api,agents,llm,cost,runner,projects,executor,store,common}/   # planned: resolver, hosts
+  limo/{api,agents,llm,cost,budget,inbox,runner,projects,executor,store,common}/   # planned: resolver, hosts
   limo/app.py  limo/config.py
   tests/functional/  tests/fakes/  tests/unit/
 ui/                                    # (planned) React SPA

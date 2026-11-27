@@ -10,8 +10,11 @@ from limo.agents.models import Run, RunIn, ToolCall
 from limo.agents.repo import RunRepo
 from limo.agents.settings_repo import AgentSettingsRepo
 from limo.agents.tools import ToolBox, ToolContext, ToolOutcome
+from limo.budget.service import BudgetService
 from limo.common.errors import NotFound
 from limo.cost.service import CallRef, CostService
+from limo.inbox.repo import NewHold
+from limo.inbox.service import InboxService
 from limo.llm.ports import LlmClient, LlmError, LlmRequest
 from limo.projects.repo import ProjectRepo
 
@@ -22,6 +25,8 @@ class RunStores:
     projects: ProjectRepo
     agent_settings: AgentSettingsRepo
     cost: CostService
+    budget: BudgetService
+    inbox: InboxService
 
 
 @dataclass(frozen=True)
@@ -120,6 +125,10 @@ class RunService:
             resp = self._llm.create(request)
             call_no += 1
             self._stores.cost.record(ref, call_no, resp.model, resp.usage)
+            reason = self._stores.budget.exceeded(ref)
+            if reason:
+                self._stop_for_budget(run, ref, reason)
+                return
             messages.append({"role": "assistant", "content": resp.content})
             uses = [b for b in resp.content if b.get("type") == "tool_use"]
             if resp.stop_reason != "tool_use" or not uses:
@@ -134,6 +143,11 @@ class RunService:
                 results.append(self._tool_result(run, ctx, use, seq))
             messages.append({"role": "user", "content": results})
         self._stores.runs.finish(run.id, "failed", None, "max turns reached")
+
+    def _stop_for_budget(self, run: Run, ref: CallRef, reason: str) -> None:
+        if ref.ticket is not None:
+            self._stores.inbox.hold(NewHold(ref.project_id, ref.feature, ref.ticket, "budget", reason))
+        self._stores.runs.finish(run.id, "failed", None, f"budget: {reason}")
 
     def _tool_result(self, run: Run, ctx: ToolContext, use: dict[str, Any], seq: int) -> dict[str, Any]:
         outcome: ToolOutcome = self._tools.call(ctx, use["name"], use["input"])

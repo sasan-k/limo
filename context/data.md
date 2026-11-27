@@ -29,6 +29,7 @@
 - `runs` — id, project_id, agent, feature, ticket, status (queued|running|succeeded|failed), model, output, error, created_at, finished_at — `002_runs.sql` (attempt, heartbeat: planned)
 - `usage` — one row per Messages API call: run_id, project_id, agent, feature, ticket, seq, model, 4 token kinds, cost_micros, priced — `004_cost.sql`; cost fixed when recorded (Q-7)
 - `tool_calls` — run_id, seq, name, target, status (ok|error|rejected), summary, created_at — `002_runs.sql`
+- `budget_defaults` (singleton), `ticket_budgets` (project_id, feature, ticket, agent '' = ticket), `holds` (open = `cleared_at` NULL) — `006_budgets_holds.sql`; budget reached = spent ≥ budget
 - `incidents` — stuck event, resolver report path, applied action
 - `prices` — model (PK), input/output/cache_read/cache_write micros per MTok — `004_cost.sql`; no price → cost 0, `priced = 0`
 - `agent_settings` — agent (PK), model, updated_at — `003_agent_settings.sql`
