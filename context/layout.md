@@ -40,7 +40,7 @@ mise.toml  .env.example                # tools, tasks, config template
 ## Wiring
 - `engine/limo/app.py` — app factory `create_app(settings, deps)`: builds adapters, injects into services, mounts routers
 - `engine/limo/agents/registry.py` — agent → prompt + reference paths (model, tool allowlist: planned)
-- `ui/src/main.tsx` — query client + app; `ui/src/App.tsx` switches pages (Agents · Board · Inbox) by nav state, no router
+- `ui/src/main.tsx` — query client + app; `ui/src/App.tsx` switches pages (Agents · Board · Inbox · Prompts · Cost) by nav state, no router; shared: `components/Select.tsx`, `api/projects.ts` (`useChosenProject`)
 
 ## Do not touch
 - `ui/src/components/ui/` — shadcn/ui sources; regenerate instead of editing

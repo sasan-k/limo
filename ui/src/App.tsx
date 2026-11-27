@@ -5,10 +5,17 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { AgentsPage } from "@/pages/AgentsPage";
 import { BoardPage } from "@/pages/BoardPage";
+import { CostPage } from "@/pages/CostPage";
 import { InboxPage } from "@/pages/InboxPage";
 import { PromptsPage } from "@/pages/PromptsPage";
 
-const PAGES = { Agents: AgentsPage, Board: BoardPage, Inbox: InboxPage, Prompts: PromptsPage };
+const PAGES = {
+  Agents: AgentsPage,
+  Board: BoardPage,
+  Inbox: InboxPage,
+  Prompts: PromptsPage,
+  Cost: CostPage,
+};
 type PageName = keyof typeof PAGES;
 
 export function App() {

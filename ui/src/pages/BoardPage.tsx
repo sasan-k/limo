@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 
 import { getJson } from "@/api/client";
-import type { Board, Project } from "@/api/types";
+import { useChosenProject } from "@/api/projects";
+import type { Board } from "@/api/types";
+import { Select } from "@/components/Select";
 import { TicketCard } from "@/components/TicketCard";
 
 function FeatureBoard({ board }: { board: Board }) {
@@ -35,9 +36,7 @@ function FeatureBoard({ board }: { board: Board }) {
 
 /** Tickets of every feature of one project, in one column per ticket status (REQ-40). */
 export function BoardPage() {
-  const projects = useQuery({ queryKey: ["projects"], queryFn: () => getJson<Project[]>("/api/projects") });
-  const [chosen, setChosen] = useState<string | null>(null);
-  const project = chosen ?? projects.data?.[0]?.name ?? null;
+  const { projects, names, project, setProject } = useChosenProject();
   const board = useQuery({
     queryKey: ["board", project],
     queryFn: () => getJson<Board>(`/api/projects/${encodeURIComponent(project ?? "")}/board`),
@@ -48,18 +47,7 @@ export function BoardPage() {
   if (project === null) return <p className="text-muted-foreground">No projects yet.</p>;
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex items-center gap-2 text-sm">
-        Project
-        <select
-          className="rounded-md border border-border bg-background px-2 py-1"
-          value={project}
-          onChange={(e) => setChosen(e.target.value)}
-        >
-          {projects.data.map((p) => (
-            <option key={p.name}>{p.name}</option>
-          ))}
-        </select>
-      </label>
+      <Select label="Project" value={project} options={names} onChange={setProject} />
       {board.isError && <p className="text-destructive">{board.error.message}</p>}
       {board.data && <FeatureBoard board={board.data} />}
     </div>
