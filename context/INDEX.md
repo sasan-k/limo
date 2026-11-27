@@ -9,7 +9,6 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 ## Shape
 - `skills/` — agent prompts + reference templates → loaded by `engine/limo/agents` (file read)
 - `engine/limo/api` — REST + SSE → calls `runner`, `agents`, `store`, `cost` (call)
-- `engine/limo/runner` — dispatch by ticket status, stuck guard, scheduler → `agents`, `resolver`, `hosts`, `store` (call)
 - `engine/limo/agents` — prompt registry, run service (tool loop, background worker), per-agent tools → `llm`, `executor` (call)
 - `engine/limo/llm` — LLM port + Anthropic adapter → Claude Messages API (HTTPS)
 - `engine/limo/runner` — startup recovery (`recovery.py`: active runs → `interrupted`, workspace reset); step: ship `review` tickets, else dispatch by ticket status via `fx` (one run at a time); poll merge requests → `agents`, `hosts`, `vcs`, `executor` (fx)
@@ -21,7 +20,6 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/inbox` — holds: tickets waiting for a human (budget now) → `store`
 - `engine/limo/cost` — prices, per-call usage, run cost, project totals → `store` (file)
 - `engine/limo/resolver` — incident bundle, action validation/apply → `agents`, `store`, `hosts` (call)
-- `engine/limo/hosts` — RepoHost port; GitLab + GitHub adapters → host REST APIs (HTTPS)
 - `engine/limo/executor` — runs commands in a workspace via `mise exec` (subprocess)
 - `engine/limo/store` — SQLite; `fx` owns the `tickets` table (file)
 - `engine/limo/events` — in-process `EventBus`; services publish, `api/events.py` streams SSE
