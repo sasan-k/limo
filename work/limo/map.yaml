@@ -43,15 +43,15 @@ tickets:
     scenarios: [SC-30, SC-31]
     depends_on: [TKT-7]
   - id: TKT-9
-    title: Stuck tickets get a resolver run whose allowlisted action is applied
-    scope: [runner, agents, host]
-    scenarios: [SC-32, SC-33, SC-34, SC-35, SC-36, SC-62]
+    title: Stuck tickets open an incident, get a resolver run, and a retry is applied
+    scope: [runner, agents]
+    scenarios: [SC-32, SC-33]
     depends_on: [TKT-8]
   - id: TKT-10
     title: Escalations reach a human and replies come back
     scope: [runner, host]
     scenarios: [SC-37, SC-38, SC-39, SC-53]
-    depends_on: [TKT-9]
+    depends_on: [TKT-19]
   - id: TKT-11
     title: Interrupted runs recover after a restart
     scope: [runner, persistence]
@@ -92,3 +92,8 @@ tickets:
     scope: [host, testing]
     scenarios: [SC-60, SC-61]
     depends_on: [TKT-7]
+  - id: TKT-19
+    title: Resolver answers questions, retitles, re-plans or escalates invalid actions
+    scope: [runner, agents, host]
+    scenarios: [SC-34, SC-35, SC-36, SC-62]
+    depends_on: [TKT-9]
