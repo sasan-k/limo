@@ -48,5 +48,5 @@ root_package = "limo"
 [[tool.importlinter.contracts]]
 name = "Services use ports, not adapters (ADR-4)"
 type = "forbidden"
-source_modules = ["limo.projects", "limo.agents", "limo.store", "limo.common"]
+source_modules = ["limo.projects", "limo.agents", "limo.store", "limo.common", "limo.cards", "limo.events"]
 forbidden_modules = ["limo.executor.local", "limo.api", "limo.app", "limo.llm.anthropic_client"]

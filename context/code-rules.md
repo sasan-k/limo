@@ -45,7 +45,7 @@
 - no new runtime dependency without an ADR
 
 ## Quality gates (Verify runs all; must pass)
-- format/lint (incl. size & complexity): `mise run lint` (ruff check + ruff format --check with C901≤10, PLR0913; eslint + prettier)
-- duplication: `mise run dup` (jscpd --threshold 0 on changed files)
+- format/lint (incl. size & complexity): `mise run lint` (ruff check + ruff format --check with C901≤10, PLR0913; in `ui/` eslint with complexity 10, max-lines 300, max-lines-per-function 40, max-params 5 + prettier --check)
+- duplication: `mise run dup` (jscpd --threshold 0 on `engine/limo` + `ui/src`, ignoring generated `schema.d.ts`, `components/ui/`)
 - architecture rules: `mise run arch` (import-linter contracts in `engine/pyproject.toml`)
 - types: `mise run types` (mypy --strict; tsc --noEmit)

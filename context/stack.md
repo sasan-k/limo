@@ -1,10 +1,11 @@
 # Stack
 <!-- Read for versions, libs, tooling. ≤ 60 lines. Single source of truth for versions. -->
-<!-- Exact library versions are pinned in engine/uv.lock and ui/package-lock.json (ui: planned). -->
+<!-- Exact library versions are pinned in engine/uv.lock and ui/package-lock.json. -->
 
 ## Runtime
 - engine: Python 3.12, FastAPI, served by uvicorn (ADR-1)
-- ui: TypeScript 5, React, Vite, Node 22 LTS (ADR-1)
+- ui: TypeScript 5.9.3 (held < 6.1 for typescript-eslint, openapi-typescript), React 19.3, Vite 8.4, Tailwind 4.3 (`@tailwindcss/vite`), react-query 5.108, Node 22 LTS (ADR-1)
+- ui tests: Vitest 5.1 + jsdom, Playwright 1.65 + `@axe-core/playwright`; `openapi-typescript` generates `ui/src/api/schema.d.ts`
 - tool versions pinned in `mise.toml`: python 3.12.16, node 22.23.5, uv 0.13.10; engine `requires-python >=3.12,<3.13`
 
 ## Data & messaging

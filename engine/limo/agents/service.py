@@ -13,10 +13,15 @@ from limo.agents.tools import ToolBox, ToolContext, ToolOutcome
 from limo.budget.service import BudgetService
 from limo.common.errors import NotFound
 from limo.cost.service import CallRef, CostService
+from limo.events.bus import EventBus
 from limo.inbox.repo import NewHold
 from limo.inbox.service import InboxService
 from limo.llm.ports import LlmClient, LlmError, LlmRequest
 from limo.projects.repo import ProjectRepo
+
+
+def _payload(run: Run) -> dict[str, object]:
+    return {"run_id": run.id, "agent": run.agent, "feature": run.feature, "ticket": run.ticket}
 
 
 @dataclass(frozen=True)
@@ -38,11 +43,14 @@ class RunConfig:
 
 
 class RunService:
-    def __init__(self, stores: RunStores, llm: LlmClient, tools: ToolBox, config: RunConfig) -> None:
+    def __init__(
+        self, stores: RunStores, llm: LlmClient, tools: ToolBox, config: RunConfig, events: EventBus
+    ) -> None:
         self._stores = stores
         self._llm = llm
         self._tools = tools
         self._config = config
+        self._events = events
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="limo-run")
 
     def close(self) -> None:
@@ -72,7 +80,8 @@ class RunService:
             attempt=attempt,
         )
         self._stores.runs.insert(run, project.id)
-        self._pool.submit(self._execute, run.id)
+        self._events.publish("run.started", project.id, _payload(run))
+        self._pool.submit(self._execute, run, project.id)
         return run
 
     def latest(self, project_id: str, feature: str, agent: str, args: str | None) -> Run | None:
@@ -85,6 +94,7 @@ class RunService:
         run_ids = self._stores.runs.active_older_than(project_id, cutoff_iso)
         for run_id in run_ids:
             self._stores.runs.finish(run_id, "failed", None, "timeout")
+            self._events.publish("run.finished", project_id, {"run_id": run_id})
         return len(run_ids)
 
     def get(self, run_id: str) -> Run:
@@ -101,15 +111,17 @@ class RunService:
     def active_count(self) -> int:
         return self._stores.runs.active_count()
 
-    def _execute(self, run_id: str) -> None:
+    def _execute(self, run: Run, project_id: str) -> None:
         try:
-            run = self.get(run_id)
-            self._stores.runs.set_status(run_id, "running")
+            self._stores.runs.set_status(run.id, "running")
+            self._events.publish("run.updated", project_id, _payload(run))
             self._run(run)
         except LlmError as e:
-            self._stores.runs.finish(run_id, "failed", None, f"llm_error: {e}")
+            self._stores.runs.finish(run.id, "failed", None, f"llm_error: {e}")
         except Exception as e:
-            self._stores.runs.finish(run_id, "failed", None, f"internal_error: {e}")
+            self._stores.runs.finish(run.id, "failed", None, f"internal_error: {e}")
+        finally:
+            self._events.publish("run.finished", project_id, _payload(run))
 
     def _run(self, run: Run) -> None:
         project = self._stores.projects.get_by_name(run.project)
@@ -148,6 +160,7 @@ class RunService:
             resp = self._llm.create(request)
             call_no += 1
             self._stores.cost.record(ref, call_no, resp.model, resp.usage)
+            self._events.publish("cost.updated", ref.project_id, {"run_id": run.id})
             reason = self._stores.budget.exceeded(ref)
             if reason:
                 self._stop_for_budget(run, ref, reason)
