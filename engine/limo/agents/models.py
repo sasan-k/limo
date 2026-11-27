@@ -26,6 +26,7 @@ class RunIn(BaseModel):
     ticket: str | None = Field(default=None, pattern=r"^TKT-\d+$")
     args: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9 =-]{0,79}$")
     ticket_status: str | None = Field(default=None, pattern=r"^[a-z]+$")
+    note: str | None = Field(default=None, max_length=500)
 
 
 class Run(BaseModel):
@@ -44,6 +45,7 @@ class Run(BaseModel):
     cost: str | None = None
     args: str | None = None
     ticket_status: str | None = None
+    note: str | None = None
 
 
 class ToolCall(BaseModel):

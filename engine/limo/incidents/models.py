@@ -25,3 +25,4 @@ class IncidentRow:
     run_id: str | None
     resolver_run_id: str | None
     action: str | None
+    note_pending: bool = False

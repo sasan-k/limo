@@ -9,6 +9,7 @@ usage:
   fx.py set         <work/feature> TKT-n key=value…  set status / build_tries / plan_tries (inc: key=+1)
   fx.py ready       <work/feature>                 list tickets ready to plan (status todo, deps done)
   fx.py tickets    <work/feature>                 print id<TAB>title per ticket
+  fx.py retitle    <work/feature> TKT-n <title>   rewrite that ticket's title in map.yaml
   fx.py adr         <context dir> ADR-n <status>   flip ADR status in ADR file and adr/INDEX.md
 Ticket definitions live in map.yaml; status + tries live in SQLite at $FX_DB
 (default <project>/.factory/state.db). Tickets missing from the DB start as todo, 0, 0.
@@ -207,6 +208,21 @@ def cmd_tickets(work):
         print(f"{t['id']}\t{t['title']}")
 
 
+def cmd_retitle(work, ticket, title):
+    if not 1 <= len(title) <= 120 or "\n" in title:
+        die("bad title")
+    path = Path(work) / "map.yaml"
+    lines = path.read_text().splitlines(keepends=True)
+    start = next((i for i, l in enumerate(lines) if l.strip() == f"- id: {ticket}"), None)
+    if start is None:
+        die(f"unknown ticket {ticket}")
+    idx = next((j for j in range(start + 1, len(lines)) if lines[j].startswith("    title:")), None)
+    if idx is None:
+        die(f"map.yaml: no title for {ticket}")
+    lines[idx] = f"    title: {title}\n"
+    path.write_text("".join(lines))
+
+
 def cmd_trace_check(work, ticket=None, repo=None):
     reqs = load_reqs(work)
     scs, errs = load_scenarios(work)
@@ -380,6 +396,8 @@ def main(a):
         repo = rest[rest.index("--repo") + 1] if "--repo" in rest else None
         pos = [x for i, x in enumerate(rest) if x != "--repo" and (i == 0 or rest[i - 1] != "--repo")]
         cmd_trace_check(pos[0], pos[1] if len(pos) > 1 else None, repo)
+    elif c == "retitle" and len(rest) >= 3:
+        cmd_retitle(rest[0], rest[1], " ".join(rest[2:]))
     elif c == "set" and len(rest) >= 3:
         cmd_set(rest[0], rest[1], rest[2:])
     elif c == "adr" and len(rest) >= 3:

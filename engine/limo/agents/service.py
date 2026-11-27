@@ -67,6 +67,7 @@ class RunService:
             finished_at=None,
             args=data.args,
             ticket_status=data.ticket_status,
+            note=data.note,
         )
         self._stores.runs.insert(run, project.id)
         self._pool.submit(self._execute, run.id)
@@ -135,6 +136,8 @@ class RunService:
             task += f" ticket={run.ticket}"
         if run.args:
             task += f" {run.args}"
+        if run.note:
+            task += f"\nnote: {run.note}"
         messages: list[dict[str, Any]] = [{"role": "user", "content": task}]
         seq = 0
         call_no = 0

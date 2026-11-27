@@ -38,8 +38,9 @@ from limo.hosts.repo import MergeRequestRepo
 from limo.hosts.unconfigured import UnconfiguredHost
 from limo.inbox.repo import HoldRepo
 from limo.inbox.service import InboxService
+from limo.incidents.apply import ActionApplier
 from limo.incidents.repo import IncidentRepo
-from limo.incidents.service import IncidentService
+from limo.incidents.service import IncidentDeps, IncidentService
 from limo.llm.anthropic_client import AnthropicLlm
 from limo.llm.ports import LlmClient
 from limo.projects.repo import ProjectRepo
@@ -98,6 +99,9 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     shipping = ShippingService(
         git, deps.host or UnconfiguredHost(), MergeRequestRepo(settings.db_path), board
     )
+    incident_repo = IncidentRepo(settings.db_path)
+    host = deps.host or UnconfiguredHost()
+    applier = ActionApplier(board, host, IssueRepo(settings.db_path), incident_repo)
     runner = RunnerService(
         RunnerDeps(
             runs,
@@ -108,7 +112,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
             git,
             PhaseService(feature_repo, runs, board),
             IssueService(deps.host or UnconfiguredHost(), IssueRepo(settings.db_path), board),
-            IncidentService(IncidentRepo(settings.db_path), runs, board, settings.run_timeout_s),
+            IncidentService(IncidentDeps(incident_repo, runs, board, applier), settings.run_timeout_s),
         ),
         settings.max_concurrent_tickets,
     )

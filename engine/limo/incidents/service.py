@@ -1,17 +1,19 @@
 import json
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
 from limo.agents.models import Run, RunIn
 from limo.agents.service import RunService
-from limo.incidents.actions import RETRY_STATUS, parse_action
+from limo.incidents.actions import parse_action
+from limo.incidents.apply import ActionApplier, ApplyContext
 from limo.incidents.detect import blocking_questions, trigger_for, write_bundle
 from limo.incidents.models import Incident, IncidentRow
 from limo.incidents.repo import IncidentRepo
 from limo.projects.models import Project
 from limo.runner.models import StepResult
-from limo.runner.tickets import TicketBoard, TicketRef, TicketState
+from limo.runner.tickets import TicketBoard, TicketState
 
 
 def _latest_line(latest: Run | None) -> str:
@@ -20,11 +22,20 @@ def _latest_line(latest: Run | None) -> str:
     return f"{latest.agent} {latest.status} {latest.error or '-'}"
 
 
+@dataclass(frozen=True)
+class IncidentDeps:
+    repo: IncidentRepo
+    runs: RunService
+    board: TicketBoard
+    applier: ActionApplier
+
+
 class IncidentService:
-    def __init__(self, repo: IncidentRepo, runs: RunService, board: TicketBoard, timeout_s: float) -> None:
-        self._repo = repo
-        self._runs = runs
-        self._board = board
+    def __init__(self, deps: IncidentDeps, timeout_s: float) -> None:
+        self._repo = deps.repo
+        self._runs = deps.runs
+        self._board = deps.board
+        self._applier = deps.applier
         self._timeout_s = timeout_s
 
     def sweep_timeouts(self, project: Project) -> int:
@@ -50,19 +61,25 @@ class IncidentService:
         return None
 
     def _apply(self, project: Project, feature: str, incident: IncidentRow, run: Run) -> StepResult:
-        action = None if run.status == "failed" else parse_action(run.output)
-        if action is None:
-            self._repo.close(incident.id, "needs_human", None)
-            return StepResult(run=None, reason="needs_human")
-        text = json.dumps(action, sort_keys=True)
-        stage = action.get("stage")
-        if action["type"] != "retry" or not isinstance(stage, str) or stage not in RETRY_STATUS:
-            self._repo.close(incident.id, "needs_human", text)
-            return StepResult(run=None, reason="needs_human")
-        ref = TicketRef(Path(project.workspace), project.name, feature, incident.ticket)
-        self._board.set_status(ref, RETRY_STATUS[stage])
-        self._repo.close(incident.id, "resolved", text)
-        return StepResult(run=None, reason="resolved")
+        failed = run.status == "failed"
+        output = f"resolver run failed: {run.error}" if failed else (run.output or "")
+        report = Path(project.workspace) / "work" / feature / "reports"
+        report = report / f"{incident.ticket}-resolve-{incident.k}.md"
+        report.parent.mkdir(parents=True, exist_ok=True)
+        report.write_text(output + "\n")
+        action = None if failed else parse_action(run.output)
+        status = self._applier.apply(ApplyContext(project, feature, incident), action)
+        text = None if action is None else json.dumps(action, sort_keys=True)
+        self._repo.close(incident.id, status, text)
+        return StepResult(run=None, reason=status)
+
+    def consume_note(self, project_id: str, feature: str, ticket: str) -> str | None:
+        pending = self._repo.pending_note(project_id, feature, ticket)
+        if pending is None:
+            return None
+        incident_id, fix = pending
+        self._repo.set_note_pending(incident_id, False)
+        return fix
 
     def _open_next(self, project: Project, feature: str, states: list[TicketState]) -> StepResult | None:
         blocked = self._repo.blocking_tickets(project.id, feature)

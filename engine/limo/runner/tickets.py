@@ -69,19 +69,20 @@ class TicketBoard:
                 titles[ticket_id] = title
         return titles
 
-    def set_status(self, ref: TicketRef, status: str) -> None:
+    def _fx(self, ref: TicketRef, args: list[str]) -> None:
         env = {"FX_DB": str(self._fx_db), "FX_SCOPE": ref.project}
         try:
-            result = self._executor.run(
-                ["fx", "set", f"work/{ref.feature}", ref.ticket, f"status={status}"],
-                ref.workspace,
-                self._timeout_s,
-                env=env,
-            )
+            result = self._executor.run(["fx", *args], ref.workspace, self._timeout_s, env=env)
         except ExecutorError as e:
             raise Conflict("map_invalid", _first_line(str(e))) from e
         if result.code != 0:
             raise Conflict("map_invalid", _first_line(result.stderr))
+
+    def set_status(self, ref: TicketRef, status: str) -> None:
+        self._fx(ref, ["set", f"work/{ref.feature}", ref.ticket, f"status={status}"])
+
+    def retitle(self, ref: TicketRef, title: str) -> None:
+        self._fx(ref, ["retitle", f"work/{ref.feature}", ref.ticket, title])
 
     def map_check(self, workspace: Path, project: str, feature: str) -> bool:
         env = {"FX_DB": str(self._fx_db), "FX_SCOPE": project}
