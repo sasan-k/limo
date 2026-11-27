@@ -1,5 +1,5 @@
 # ADR-12: One RepoHost contract suite run against recorded HTTP for GitLab and GitHub
-status: proposed
+status: accepted
 scope: host, testing
 supersedes: none
 source: NFR-8

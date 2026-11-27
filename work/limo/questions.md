@@ -74,14 +74,14 @@
 - options: per agent per ticket · total per agent across the feature
 - answer: Per agent per ticket.
 
-## Q-13 [open] (deferred by user 2026-11-26 — revisit when planning the first repo-host ticket, TKT-7) Test the GitLab and GitHub adapters against recorded HTTP fixtures, or against live sandbox repos?
+## Q-13 [answered] Test the GitLab and GitHub adapters against recorded HTTP fixtures, or against live sandbox repos?
 - from: NFR-8 (ADR-12 proposed) · raised by: architecture
 - blocks: none (ADR-12 stays proposed until answered; adapters can be built either way)
 - options: recorded HTTP in every run, re-recorded on demand from sandbox repos · live sandbox repos in CI (needs tokens)
-- answer:
+- answer: Recorded HTTP only; no live repos in tests (ADR-12 accepted).
 
-## Q-14 [open] GitHub/GitLab do not let you approve your own merge request. Which identity opens Limo's merge requests?
+## Q-14 [answered] GitHub/GitLab do not let you approve your own merge request. Which identity opens Limo's merge requests?
 - from: REQ-30 · raised by: human (TKT-1 review, 2026-11-26)
 - blocks: TKT-7
 - options: separate identity (GitHub App / bot account) so the human approves and auto-merge runs · solo mode: the human merging counts as approval, no auto-merge
-- answer:
+- answer: Limo opens merge requests with its own identity (bot account / app token); a separate human approver approves; host auto-merge then merges.

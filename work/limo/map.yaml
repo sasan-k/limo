@@ -87,3 +87,8 @@ tickets:
     scope: [cost, runner, api]
     scenarios: [SC-55, SC-56, SC-57, SC-58]
     depends_on: [TKT-4, TKT-5]
+  - id: TKT-18
+    title: GitHub and GitLab adapters act as Limo's identity
+    scope: [host, testing]
+    scenarios: [SC-60, SC-61]
+    depends_on: [TKT-7]

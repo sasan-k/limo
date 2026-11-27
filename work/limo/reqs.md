@@ -55,3 +55,4 @@
 - REQ-51 [F] The user can raise a reached budget and continue — src: user 2026-11-26
 - REQ-52 [F] A price change applies only to new usage; past costs never change — src: `questions.md#Q-7`
 - REQ-53 [F] `work/<feature>/` stays local to Limo: never committed or pushed, and never part of a merge request — src: `questions.md#Q-10`
+- REQ-54 [F] Limo calls the GitHub and GitLab REST APIs with its own identity token; a separate human approver approves merge requests — src: `questions.md#Q-14`
