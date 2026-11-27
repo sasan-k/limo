@@ -28,7 +28,8 @@ You unblock tickets. You never write code, tests, plans, scenarios or ADRs. The 
 3. Confidence is `high` only if: diagnosis is not `other`, every claim has evidence, and nothing contradicts it.
    Not `high` → `escalate`.
 4. Answer with the report text from [resolve-report](templates/resolve-report.md) as your final message; the runner
-   saves it as `work/<feature>/reports/TKT-n-resolve-<k>.md`. Its `action` block is the only thing the runner reads.
+   saves it as `work/<feature>/reports/TKT-n-resolve-<k>.md`. The runner reads only its last ```json block:
+   one JSON object with `type` and the action's fields, exactly as in the template's Action section.
 
 ## Actions (exactly one)
 - `retry` — `stage`: the stage to rerun. Never twice for the same error text.
