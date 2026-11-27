@@ -36,6 +36,7 @@ max-args = 5
 
 [tool.ruff.lint.per-file-ignores]
 "limo/executor/local.py" = ["TID251", "S603", "S607"]
+"limo/llm/claude_cli.py" = ["TID251", "S603"]
 "tests/**" = ["TID251", "S101", "S603", "S607"]
 
 [tool.mypy]
@@ -49,4 +50,4 @@ root_package = "limo"
 name = "Services use ports, not adapters (ADR-4)"
 type = "forbidden"
 source_modules = ["limo.projects", "limo.agents", "limo.store", "limo.common", "limo.cards", "limo.events", "limo.board", "limo.prompts"]
-forbidden_modules = ["limo.executor.local", "limo.api", "limo.app", "limo.llm.anthropic_client"]
+forbidden_modules = ["limo.executor.local", "limo.api", "limo.app", "limo.llm.anthropic_client", "limo.llm.claude_cli"]

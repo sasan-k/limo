@@ -102,7 +102,8 @@ flowchart LR
         UI[ui/<br/>agent cards · ticket board · runner switch<br/>intake form · prompt editor<br/>inbox: escalations + budgets · cost]
         subgraph ENG["engine/ (Python)"]
             RUN[Runner<br/>dispatch by status · stuck guard]
-            RT[Agent runtime<br/>Messages API loop]
+            RT[Agent runtime<br/>claude -p per run · or Messages API loop]
+            MCP[Per-run MCP endpoint<br/>run token · allowlist]
             TOOLS[Tools per agent<br/>allowlist enforced]
             FX[fx<br/>checks · status flips]
             RH[RepoHost<br/>GitLab · GitHub]
@@ -117,7 +118,10 @@ flowchart LR
     RT --> TOOLS
     TOOLS --> FX
     TOOLS -->|read/write, run tests| WS[(Workspace:<br/>cloned target repo<br/>context/ + work/ + code)]
-    RT -->|Anthropic SDK| API[Claude API]
+    RT -->|claude -p, user login| CC[Claude Code CLI]
+    CC -->|tool calls| MCP
+    MCP --> TOOLS
+    RT -->|backend api: Anthropic SDK| API[Claude API]
     RUN --> LOG
     RUN --> RH
     RH -->|issues · MR/PR · labels ·<br/>approvals · CI| HOST[(GitLab / GitHub)]

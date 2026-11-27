@@ -15,3 +15,4 @@
 - ADR-11 [accepted] Scheduler port, concurrency setting, v1 in-process — scope: runner
 - ADR-12 [accepted] One RepoHost contract suite on recorded HTTP — scope: host, testing
 - ADR-13 [accepted] shadcn/ui theme tokens, dark/light, AA checked — scope: ui
+- ADR-14 [accepted] Agents run via local claude -p; tools only via Limo MCP — scope: agents, runner, cost

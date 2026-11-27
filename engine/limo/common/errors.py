@@ -21,3 +21,7 @@ class ExternalError(LimoError):
 
 class Unprocessable(LimoError):
     status = 422
+
+
+class Unauthorized(LimoError):
+    status = 401

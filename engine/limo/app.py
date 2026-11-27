@@ -5,9 +5,11 @@ from dataclasses import dataclass
 from fastapi import FastAPI
 
 from limo.agents.agent_service import AgentService
+from limo.agents.cli_runner import CliConfig, CliRunner
+from limo.agents.mcp import McpGateway
 from limo.agents.registry import AgentRegistry
 from limo.agents.repo import RunRepo
-from limo.agents.service import RunConfig, RunService, RunStores
+from limo.agents.service import Backends, RunConfig, RunService, RunStores
 from limo.agents.settings_repo import AgentSettingsRepo
 from limo.agents.tools import ToolBox
 from limo.api.agents_routes import agents_router
@@ -20,6 +22,7 @@ from limo.api.events import events_router
 from limo.api.features_routes import features_router
 from limo.api.inbox_routes import inbox_router
 from limo.api.incidents_routes import incidents_router
+from limo.api.mcp_routes import mcp_router
 from limo.api.projects_routes import projects_router
 from limo.api.prompts_routes import prompts_router
 from limo.api.runner_routes import runner_router
@@ -53,7 +56,8 @@ from limo.incidents.apply import ActionApplier
 from limo.incidents.repo import IncidentRepo
 from limo.incidents.service import IncidentDeps, IncidentService
 from limo.llm.anthropic_client import AnthropicLlm
-from limo.llm.ports import LlmClient
+from limo.llm.claude_cli import ClaudeCli
+from limo.llm.ports import AgentCli, LlmClient
 from limo.projects.repo import ProjectRepo
 from limo.projects.service import ProjectService
 from limo.prompts.repo import PromptSaveRepo
@@ -72,6 +76,7 @@ class Deps:
     executor: Executor
     llm: LlmClient
     host: RepoHost | None = None
+    cli: AgentCli | None = None
 
 
 def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
@@ -106,6 +111,13 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     inbox = InboxService(HoldRepo(settings.db_path))
     feature_repo = FeatureRepo(settings.db_path)
     features = FeatureService(feature_repo, ProjectRepo(settings.db_path))
+    tools = ToolBox(deps.executor, settings.command_timeout_s)
+    gateway = McpGateway(tools, RunRepo(settings.db_path))
+    cli = CliRunner(
+        deps.cli or ClaudeCli(settings.claude_bin),
+        gateway,
+        CliConfig(settings.engine_url, settings.agent_cwd, settings.data_dir / "mcp", settings.run_timeout_s),
+    )
     runs = RunService(
         RunStores(
             RunRepo(settings.db_path),
@@ -115,9 +127,15 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
             budget,
             inbox,
         ),
-        deps.llm,
-        ToolBox(deps.executor, settings.command_timeout_s),
-        RunConfig(settings.skills_dir, settings.default_model, settings.max_turns, fx_db=settings.db_path),
+        Backends(deps.llm, cli),
+        tools,
+        RunConfig(
+            settings.skills_dir,
+            settings.default_model,
+            settings.max_turns,
+            fx_db=settings.db_path,
+            backend=settings.agent_backend,
+        ),
         events,
     )
     board = TicketBoard(deps.executor, settings.db_path, settings.command_timeout_s)
@@ -188,6 +206,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
     app.include_router(cost_router(cost))
     app.include_router(runner_router(runner))
     app.include_router(switch_router(loop))
+    app.include_router(mcp_router(gateway))
     app.include_router(incidents_router(runner))
     app.include_router(budget_router(budget))
     app.include_router(inbox_router(runner))

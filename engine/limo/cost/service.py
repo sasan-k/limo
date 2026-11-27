@@ -40,6 +40,14 @@ class CostService:
 
     def record(self, ref: CallRef, seq: int, model: str, usage: LlmUsage) -> None:
         price = self._prices.get(model)
+        self._add(ref, (seq, model), usage, cost_micros(usage, price), price is not None)
+
+    def record_billed(self, ref: CallRef, seq: int, model: str, usage: LlmUsage, cost: int) -> None:
+        """Usage whose cost was reported by the provider (claude CLI, ADR-14), not the price table."""
+        self._add(ref, (seq, model), usage, cost, True)
+
+    def _add(self, ref: CallRef, call: tuple[int, str], usage: LlmUsage, cost: int, priced: bool) -> None:
+        seq, model = call
         self._usage.add(
             UsageRow(
                 run_id=ref.run_id,
@@ -50,8 +58,8 @@ class CostService:
                 seq=seq,
                 model=model,
                 usage=usage,
-                cost_micros=cost_micros(usage, price),
-                priced=price is not None,
+                cost_micros=cost,
+                priced=priced,
             )
         )
 

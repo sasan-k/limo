@@ -23,7 +23,7 @@ PORT = 8701
 
 def build_app(seed: bool = True) -> FastAPI:
     data_dir = Path(tempfile.mkdtemp(prefix="limo-e2e-"))
-    settings = Settings(data_dir=data_dir, _env_file=None)
+    settings = Settings(data_dir=data_dir, agent_backend="api", _env_file=None)
     deps = Deps(executor=LocalExecutor(path_prefix=settings.scripts_dir), llm=FakeLlm(), host=FakeHost())
     app = create_app(settings, deps)
     if seed:

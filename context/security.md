@@ -18,6 +18,7 @@
 - each agent gets only its allowlisted tools; the engine rejects any other tool name — `engine/limo/agents/tools.py` (`ToolBox.call`), lists in `allowlists.py`
 - Build read tool: only files in the plan's Context pack; Resolver: read-only + host-query
 - agents never receive API keys or host tokens; host access goes through engine tools
+- `claude-cli` backend (ADR-14): no built-in tools; MCP endpoint `/mcp/runs/{id}` needs the run's token (401 otherwise, closed when the run ends); MCP config file 0600, deleted after the run; process env only `PATH`, `HOME`
 - command env is only `PATH` (+ `scripts/` for `fx`), `HOME`, `FX_DB`, `FX_SCOPE` — `engine/limo/executor/local.py`
 - write tools are confined to the project workspace; never the app's own repo except the prompt editor
 

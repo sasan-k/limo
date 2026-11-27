@@ -1,4 +1,6 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol
 
 
@@ -32,3 +34,31 @@ class LlmResponse:
 
 class LlmClient(Protocol):
     def create(self, request: LlmRequest) -> LlmResponse: ...
+
+
+@dataclass(frozen=True)
+class CliRequest:
+    """One agent run as a local `claude -p` session (ADR-14)."""
+
+    model: str
+    task: str
+    system_prompt_file: Path
+    mcp_config_file: Path
+    cwd: Path
+    timeout_s: float
+    max_budget_usd: float | None = None
+
+
+@dataclass(frozen=True)
+class CliResult:
+    ok: bool
+    text: str
+    error: str | None
+    usage: LlmUsage
+    cost_micros: int
+
+
+class AgentCli(Protocol):
+    """Runs one agent session to the end; `on_event` receives each stream-json event."""
+
+    def run(self, request: CliRequest, on_event: Callable[[dict[str, Any]], None]) -> CliResult: ...
