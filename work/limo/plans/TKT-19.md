@@ -3,8 +3,8 @@ ticket: TKT-19
 feature: limo
 scenarios: [SC-34, SC-35, SC-36, SC-62]
 scope: [runner, agents, host]
-revision: 0
-run: all
+revision: 2  # resolver replan (TKT-19-resolve-1, plan-detail)
+run: from-STEP-14
 read: [work/limo/map.yaml, work/limo/features/resolver.feature, work/limo/reports/TKT-9-close.md, skills/resolver/SKILL.md, DESIGN.md#Orchestration, context/INDEX.md, context/code-rules.md, context/security.md, context/testing.md, context/data.md, scripts/fx.py, engine/limo/incidents/*.py, engine/limo/hosts/*.py, engine/limo/agents/*.py, engine/limo/runner/service.py, engine/tests/fakes/*.py]
 ---
 # TKT-19: Resolver answers questions, retitles, re-plans or escalates invalid actions
@@ -147,6 +147,26 @@ ALTER TABLE runs ADD COLUMN note TEXT;
 ### STEP-11 format, gates, full suite
 - file: none new (edit only lines a gate reports, in files this plan created or edited)
 - do: `mise run fmt`, `mise run gates` (up to 3 fixes), `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` all passed
+
+### STEP-12 re-detect blocked/question after a resolved incident (revision 1: verify r0)
+- file: `engine/limo/incidents/repo.py` (edit)
+- do: at the top of `exists_for_run`, add `if run_id is None: return False` (tickets with an open or needs_human incident are already skipped by `blocking_tickets`); change nothing else
+- verify: `mise run test:engine` → all passed
+
+### STEP-13 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates` (up to 3 fixes), `mise run test`; never add `# noqa`
+- verify: gates exit 0; `mise run test` all passed
+
+### STEP-14 one fx runner on the board (revision 2: resolver replan)
+- file: `engine/limo/runner/tickets.py` (edit)
+- do: add `def _fx(self, ref: TicketRef, args: list[str]) -> None` that runs `["fx", *args]` in `ref.workspace` with env `{"FX_DB": str(self._fx_db), "FX_SCOPE": ref.project}` and the same error handling as today's `set_status` (`ExecutorError` or exit ≠ 0 → `Conflict("map_invalid", _first_line(...))`). Make `set_status` call `self._fx(ref, ["set", f"work/{ref.feature}", ref.ticket, f"status={status}"])` and `retitle` call `self._fx(ref, ["retitle", f"work/{ref.feature}", ref.ticket, title])`. No other change.
+- verify: `mise run dup` → `Found 0 clones.`
+
+### STEP-15 format, gates, full suite
+- file: none new (edit only lines a gate reports, in files this plan created or edited)
+- do: `mise run fmt`, `mise run gates` (up to 3 fix rounds), `mise run test`; never add `# noqa`
 - verify: gates exit 0; `mise run test` all passed
 
 ## Do not

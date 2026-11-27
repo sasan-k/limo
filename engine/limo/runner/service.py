@@ -79,9 +79,10 @@ class RunnerService:
             return StepResult(run=None, reason="no_ready_ticket")
         agent, ticket, ticket_status = target
         self._start_branch(project, feature, ticket)
+        note = self._incidents.consume_note(project.id, feature, ticket) if agent == "plan" else None
         run = self._runs.start(
             project.name,
-            RunIn(agent=agent, feature=feature, ticket=ticket, ticket_status=ticket_status),
+            RunIn(agent=agent, feature=feature, ticket=ticket, ticket_status=ticket_status, note=note),
         )
         return StepResult(run=run, reason="started")
 

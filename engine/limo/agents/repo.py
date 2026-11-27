@@ -16,8 +16,8 @@ class RunRepo:
             conn.execute(
                 "INSERT INTO runs"
                 " (id, project_id, agent, feature, ticket, status, model, output, error,"
-                " created_at, finished_at, args, ticket_status)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " created_at, finished_at, args, ticket_status, note)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     run.id,
                     project_id,
@@ -32,6 +32,7 @@ class RunRepo:
                     run.finished_at,
                     run.args,
                     run.ticket_status,
+                    run.note,
                 ),
             )
             conn.commit()
@@ -43,7 +44,7 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note"
                 " FROM runs r JOIN projects p ON p.id = r.project_id WHERE r.id = ?",
                 (run_id,),
             ).fetchone()
@@ -56,7 +57,7 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note"
                 " FROM runs r JOIN projects p ON p.id = r.project_id"
                 " WHERE r.project_id = ? AND r.feature = ? AND r.agent = ? AND r.args IS ?"
                 " ORDER BY r.created_at DESC LIMIT 1",
@@ -71,7 +72,7 @@ class RunRepo:
         try:
             row = conn.execute(
                 "SELECT r.id, p.name AS project, r.agent, r.feature, r.ticket, r.status, r.model,"
-                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status"
+                " r.output, r.error, r.created_at, r.finished_at, r.args, r.ticket_status, r.note"
                 " FROM runs r JOIN projects p ON p.id = r.project_id"
                 " WHERE r.project_id = ? AND r.feature = ? AND r.ticket = ? AND r.agent != 'resolver'"
                 " ORDER BY r.created_at DESC LIMIT 1",

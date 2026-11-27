@@ -16,3 +16,9 @@ class UnconfiguredHost:
 
     def set_issue_status(self, project: HostProject, number: int, status: str) -> None:
         raise HostError("repo host adapter not configured")
+
+    def set_issue_title(self, project: HostProject, number: int, title: str) -> None:
+        raise HostError("repo host adapter not configured")
+
+    def add_issue_label(self, project: HostProject, number: int, label: str) -> None:
+        raise HostError("repo host adapter not configured")

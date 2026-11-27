@@ -1,4 +1,5 @@
 import builtins
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -40,13 +41,13 @@ class IncidentRepo:
         conn = connect(self._db_path)
         try:
             rows = conn.execute(
-                "SELECT id, ticket, k, trigger, status, run_id, resolver_run_id, action FROM incidents"
-                " WHERE project_id = ? AND feature = ? ORDER BY rowid",
+                "SELECT id, ticket, k, trigger, status, run_id, resolver_run_id, action, note_pending"
+                " FROM incidents WHERE project_id = ? AND feature = ? ORDER BY rowid",
                 (project_id, feature),
             ).fetchall()
         finally:
             conn.close()
-        return [IncidentRow(**dict(row)) for row in rows]
+        return [IncidentRow(**{**dict(row), "note_pending": bool(row["note_pending"])}) for row in rows]
 
     def open_for(self, project_id: str, feature: str) -> builtins.list[IncidentRow]:
         return [row for row in self.list(project_id, feature) if row.status == "open"]
@@ -66,6 +67,8 @@ class IncidentRepo:
         return int(row[0])
 
     def exists_for_run(self, project_id: str, ticket: str, trigger: str, run_id: str | None) -> bool:
+        if run_id is None:
+            return False
         conn = connect(self._db_path)
         try:
             row = conn.execute(
@@ -94,3 +97,39 @@ class IncidentRepo:
             conn.commit()
         finally:
             conn.close()
+
+    def actions_for(self, project_id: str, feature: str, ticket: str) -> builtins.list[str]:
+        conn = connect(self._db_path)
+        try:
+            rows = conn.execute(
+                "SELECT action FROM incidents WHERE project_id = ? AND feature = ? AND ticket = ?"
+                " AND action IS NOT NULL ORDER BY rowid",
+                (project_id, feature, ticket),
+            ).fetchall()
+        finally:
+            conn.close()
+        return [str(row["action"]) for row in rows]
+
+    def set_note_pending(self, incident_id: str, value: bool) -> None:
+        conn = connect(self._db_path)
+        try:
+            conn.execute(
+                "UPDATE incidents SET note_pending = ? WHERE id = ?", (1 if value else 0, incident_id)
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def pending_note(self, project_id: str, feature: str, ticket: str) -> tuple[str, str] | None:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute(
+                "SELECT id, action FROM incidents WHERE project_id = ? AND feature = ? AND ticket = ?"
+                " AND note_pending = 1 ORDER BY rowid DESC LIMIT 1",
+                (project_id, feature, ticket),
+            ).fetchone()
+        finally:
+            conn.close()
+        if row is None:
+            return None
+        return str(row["id"]), str(json.loads(row["action"])["fix"])

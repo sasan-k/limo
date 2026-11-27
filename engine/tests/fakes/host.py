@@ -68,6 +68,18 @@ class FakeHost:
         issue.labels.append(f"limo:{status}")
         self.calls.append(("set_issue_status", number))
 
+    def set_issue_title(self, project: HostProject, number: int, title: str) -> None:
+        self._check("set_issue_title")
+        self.issues[number].title = title
+        self.calls.append(("set_issue_title", number))
+
+    def add_issue_label(self, project: HostProject, number: int, label: str) -> None:
+        self._check("add_issue_label")
+        issue = self.issues[number]
+        if label not in issue.labels:
+            issue.labels.append(label)
+        self.calls.append(("add_issue_label", number))
+
     def approve(self, number: int) -> None:
         self.mrs[number].approved = True
 
