@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import time
 from collections.abc import Iterator
@@ -56,6 +57,16 @@ def make_empty_bare_repo(root: Path, name: str) -> str:
     bare = root / f"{name}.git"
     _git("init", "--bare", str(bare), cwd=root)
     return bare.as_uri()
+
+
+def make_skills_repo(root: Path) -> Path:
+    """Copy the real skills/ into a new git repo <root>/app with one commit; return <root>/app/skills."""
+    app = root / "app"
+    shutil.copytree(Settings(_env_file=None).skills_dir, app / "skills")
+    _git("init", "-b", "main", cwd=app)
+    _git("add", ".", cwd=app)
+    _git("-c", "user.name=limo", "-c", "user.email=limo@example.com", "commit", "-m", "init", cwd=app)
+    return app / "skills"
 
 
 def add_cart_project(client: TestClient, root: Path, name: str = "shop") -> None:

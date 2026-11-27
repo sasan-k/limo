@@ -25,6 +25,7 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/executor` — runs commands in a workspace via `mise exec` (subprocess)
 - `engine/limo/store` — SQLite; `fx` owns the `tickets` table (file)
 - `engine/limo/events` — in-process `EventBus`; services publish, `api/events.py` streams SSE
+- `engine/limo/prompts` — prompt editor: read/save/history/rollback of `skills/<agent>/` files as git commits → `vcs`, `store`
 - `engine/limo/board` — project board: features in `work/*/map.yaml` + tickets via `fx board` → `runner/tickets`
 - `engine/limo/cards` — agent card read model (one SQL query) → `store`
 - `ui` — React SPA → `engine/limo/api` via REST + SSE (react-query, invalidated by SSE)

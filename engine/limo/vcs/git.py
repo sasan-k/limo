@@ -1,10 +1,20 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 from limo.executor.ports import CommandResult, Executor, ExecutorError
 
+IDENTITY = ("-c", "user.name=Limo", "-c", "user.email=limo@localhost")
+
 
 class GitError(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class FileVersion:
+    version: str
+    saved_at: str
+    message: str
 
 
 class GitOps:
@@ -47,11 +57,30 @@ class GitOps:
         if added.code != 0:
             raise GitError(added.stderr)
         self._git(workspace, "reset", "-q", "--", "work")
-        committed = self._git(
-            workspace, "-c", "user.name=Limo", "-c", "user.email=limo@localhost", "commit", "-m", message
-        )
+        committed = self._git(workspace, *IDENTITY, "commit", "-m", message)
         if committed.code != 0 and "nothing to commit" not in committed.stdout:
             raise GitError(committed.stderr or committed.stdout)
         pushed = self._git(workspace, "push", "-u", "origin", branch)
         if pushed.code != 0:
             raise GitError(pushed.stderr)
+
+    def file_versions(self, cwd: Path, path: str, limit: int) -> list[FileVersion]:
+        result = self._git(cwd, "log", f"-n{limit}", "--format=%H%x09%cI%x09%s", "--", path)
+        if result.code != 0:
+            raise GitError(result.stderr)
+        versions: list[FileVersion] = []
+        for line in result.stdout.splitlines():
+            sha, _, rest = line.partition("\t")
+            saved_at, _, message = rest.partition("\t")
+            versions.append(FileVersion(sha, saved_at, message))
+        return versions
+
+    def commit_file(self, cwd: Path, path: str, message: str) -> None:
+        committed = self._git(cwd, *IDENTITY, "commit", "-m", message, "--", path)
+        if committed.code != 0:
+            raise GitError(committed.stderr or committed.stdout)
+
+    def restore_file(self, cwd: Path, version: str, path: str) -> None:
+        restored = self._git(cwd, "checkout", version, "--", path)
+        if restored.code != 0:
+            raise GitError(restored.stderr)

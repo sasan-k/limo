@@ -9,6 +9,7 @@ export const INVALIDATES: Record<string, QueryKey[]> = {
   "incident.opened": [["agent-cards"], ["board"], ["inbox"]],
   "cost.updated": [["agent-cards"]],
   "ticket.changed": [["board"]],
+  "prompt.saved": [["prompt"], ["prompt-history"]],
 };
 
 /** Opens one EventSource on /api/events and refetches the matching queries on each event. */

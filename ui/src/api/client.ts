@@ -11,13 +11,21 @@ export async function getJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-/** POST a JSON body to the engine; throws with the engine's error message on a non-2xx status. */
-export async function postJson<T>(path: string, body: unknown): Promise<T> {
+/** Send a JSON body to the engine; throws with the engine's error message on a non-2xx status. */
+async function sendJson<T>(method: "POST" | "PUT", path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
-    method: "POST",
+    method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw await failure("POST", path, response);
+  if (!response.ok) throw await failure(method, path, response);
   return (await response.json()) as T;
+}
+
+export function postJson<T>(path: string, body: unknown): Promise<T> {
+  return sendJson<T>("POST", path, body);
+}
+
+export function putJson<T>(path: string, body: unknown): Promise<T> {
+  return sendJson<T>("PUT", path, body);
 }

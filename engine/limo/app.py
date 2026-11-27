@@ -21,6 +21,7 @@ from limo.api.features_routes import features_router
 from limo.api.inbox_routes import inbox_router
 from limo.api.incidents_routes import incidents_router
 from limo.api.projects_routes import projects_router
+from limo.api.prompts_routes import prompts_router
 from limo.api.runner_routes import runner_router
 from limo.api.runs_routes import runs_router
 from limo.board.service import BoardService
@@ -54,6 +55,8 @@ from limo.llm.anthropic_client import AnthropicLlm
 from limo.llm.ports import LlmClient
 from limo.projects.repo import ProjectRepo
 from limo.projects.service import ProjectService
+from limo.prompts.repo import PromptSaveRepo
+from limo.prompts.service import PromptService
 from limo.runner.recovery import RecoveryService
 from limo.runner.service import RunnerDeps, RunnerService
 from limo.runner.shipping import ShippingService
@@ -167,6 +170,9 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         cards_router(AgentCardService(CardRepo(settings.db_path), agent_settings, settings.default_model))
     )
     app.include_router(board_router(BoardService(ProjectRepo(settings.db_path), board)))
+    app.include_router(
+        prompts_router(PromptService(settings.skills_dir, git, PromptSaveRepo(settings.db_path), events))
+    )
     app.include_router(events_router(events, settings.sse_heartbeat_s))
     app.include_router(runs_router(runs))
     app.include_router(cost_router(cost))
