@@ -17,3 +17,7 @@ class Conflict(LimoError):
 
 class ExternalError(LimoError):
     status = 502
+
+
+class Unprocessable(LimoError):
+    status = 422

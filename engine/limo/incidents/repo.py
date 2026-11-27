@@ -1,10 +1,20 @@
 import builtins
 import json
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from limo.incidents.models import IncidentRow
 from limo.store.db import connect
+
+
+@dataclass(frozen=True)
+class Escalation:
+    row: IncidentRow
+    project: str
+    feature: str
+    created_at: str
 
 
 class IncidentRepo:
@@ -17,8 +27,8 @@ class IncidentRepo:
             conn.execute(
                 "INSERT INTO incidents"
                 " (id, project_id, feature, ticket, k, trigger, status, run_id, resolver_run_id, action,"
-                " created_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " human_input, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     row.id,
                     project_id,
@@ -30,6 +40,7 @@ class IncidentRepo:
                     row.run_id,
                     row.resolver_run_id,
                     row.action,
+                    1 if row.human_input else 0,
                     datetime.now(UTC).isoformat(),
                 ),
             )
@@ -41,19 +52,98 @@ class IncidentRepo:
         conn = connect(self._db_path)
         try:
             rows = conn.execute(
-                "SELECT id, ticket, k, trigger, status, run_id, resolver_run_id, action, note_pending"
+                "SELECT id, ticket, k, trigger, status, run_id, resolver_run_id, action, note_pending,"
+                " ask, reply, human_input, last_comment_id"
                 " FROM incidents WHERE project_id = ? AND feature = ? ORDER BY rowid",
                 (project_id, feature),
             ).fetchall()
         finally:
             conn.close()
-        return [IncidentRow(**{**dict(row), "note_pending": bool(row["note_pending"])}) for row in rows]
+        return [_row(row) for row in rows]
+
+    def get(self, incident_id: str) -> IncidentRow | None:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute(
+                "SELECT id, ticket, k, trigger, status, run_id, resolver_run_id, action, note_pending,"
+                " ask, reply, human_input, last_comment_id FROM incidents WHERE id = ?",
+                (incident_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        return None if row is None else _row(row)
 
     def open_for(self, project_id: str, feature: str) -> builtins.list[IncidentRow]:
         return [row for row in self.list(project_id, feature) if row.status == "open"]
 
+    def awaiting_reply(self, project_id: str, feature: str) -> builtins.list[IncidentRow]:
+        return [
+            row for row in self.list(project_id, feature) if row.status == "needs_human" and row.reply is None
+        ]
+
+    def replied(self, project_id: str, feature: str) -> builtins.list[IncidentRow]:
+        return [
+            row
+            for row in self.list(project_id, feature)
+            if row.status == "needs_human" and row.reply is not None
+        ]
+
+    def escalations(self) -> builtins.list[Escalation]:
+        conn = connect(self._db_path)
+        try:
+            rows = conn.execute(
+                "SELECT i.id, i.ticket, i.k, i.trigger, i.status, i.run_id, i.resolver_run_id, i.action,"
+                " i.note_pending, i.ask, i.reply, i.human_input, i.last_comment_id,"
+                " p.name AS project, i.feature, i.created_at"
+                " FROM incidents i JOIN projects p ON p.id = i.project_id"
+                " WHERE i.status = 'needs_human' AND i.reply IS NULL ORDER BY i.rowid"
+            ).fetchall()
+        finally:
+            conn.close()
+        result = []
+        for r in rows:
+            data = dict(r)
+            project, feature, created_at = data.pop("project"), data.pop("feature"), data.pop("created_at")
+            result.append(Escalation(_row(data), str(project), str(feature), str(created_at)))
+        return result
+
     def blocking_tickets(self, project_id: str, feature: str) -> set[str]:
-        return {row.ticket for row in self.list(project_id, feature) if row.status in ("open", "needs_human")}
+        return {
+            row.ticket
+            for row in self.list(project_id, feature)
+            if row.status == "open" or (row.status == "needs_human" and row.reply is None)
+        }
+
+    def resolver_count(self, project_id: str, feature: str, ticket: str) -> int:
+        conn = connect(self._db_path)
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM incidents WHERE project_id = ? AND feature = ? AND ticket = ?"
+                " AND resolver_run_id IS NOT NULL AND human_input = 0",
+                (project_id, feature, ticket),
+            ).fetchone()
+        finally:
+            conn.close()
+        return int(row[0])
+
+    def set_ask(self, incident_id: str, ask: str) -> None:
+        conn = connect(self._db_path)
+        try:
+            conn.execute("UPDATE incidents SET ask = ? WHERE id = ?", (ask, incident_id))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def set_reply(self, incident_id: str, reply: str, comment_id: str | None) -> None:
+        conn = connect(self._db_path)
+        try:
+            conn.execute(
+                "UPDATE incidents SET reply = ?, last_comment_id = ? WHERE id = ?",
+                (reply, comment_id, incident_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
     def count_for(self, project_id: str, feature: str, ticket: str) -> int:
         conn = connect(self._db_path)
@@ -133,3 +223,14 @@ class IncidentRepo:
         if row is None:
             return None
         return str(row["id"]), str(json.loads(row["action"])["fix"])
+
+
+def _row(row: Any) -> IncidentRow:
+    data = dict(row)
+    return IncidentRow(
+        **{
+            **data,
+            "note_pending": bool(data["note_pending"]),
+            "human_input": bool(data["human_input"]),
+        }
+    )

@@ -1,0 +1,4 @@
+ALTER TABLE incidents ADD COLUMN ask TEXT;
+ALTER TABLE incidents ADD COLUMN reply TEXT;
+ALTER TABLE incidents ADD COLUMN human_input INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE incidents ADD COLUMN last_comment_id TEXT;

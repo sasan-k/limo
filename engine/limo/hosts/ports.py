@@ -32,6 +32,13 @@ class ReviewComment:
 
 
 @dataclass(frozen=True)
+class IssueComment:
+    id: str
+    body: str
+    mine: bool
+
+
+@dataclass(frozen=True)
 class MrStatus:
     state: Literal["open", "merged", "closed"]
     approved: bool
@@ -54,3 +61,7 @@ class RepoHost(Protocol):
     def set_issue_title(self, project: HostProject, number: int, title: str) -> None: ...
 
     def add_issue_label(self, project: HostProject, number: int, label: str) -> None: ...
+
+    def comment_issue(self, project: HostProject, number: int, body: str) -> None: ...
+
+    def issue_comments(self, project: HostProject, number: int) -> list[IssueComment]: ...

@@ -35,11 +35,23 @@ class ActionApplier:
         self._issues = issues
         self._repo = repo
 
-    def apply(self, ctx: ApplyContext, action: dict[str, Any] | None) -> Literal["resolved", "needs_human"]:
+    def apply(
+        self, ctx: ApplyContext, action: dict[str, Any] | None, run_failed: bool = False
+    ) -> Literal["resolved", "needs_human"]:
         try:
             if self._handle(ctx, action):
                 return "resolved"
-            self._escalate(ctx)
+            if action is not None and action.get("type") == "escalate":
+                summary, ask = str(action.get("summary", "")), str(action.get("ask", ""))
+            else:
+                reason = (
+                    "resolver run failed"
+                    if run_failed
+                    else ("invalid action" if action is None else "action could not be applied")
+                )
+                summary = f"Resolver could not act ({reason})"
+                ask = f"What should Limo do with {ctx.incident.ticket}?"
+            self.escalate(ctx, summary, ask)
             return "needs_human"
         except HostError as e:
             raise ExternalError("host_error", "repo host call failed") from e
@@ -133,7 +145,13 @@ class ActionApplier:
         actions = self._repo.actions_for(ctx.project.id, ctx.feature, ctx.incident.ticket)
         return any(json.loads(text).get("type") == "replan" for text in actions)
 
-    def _escalate(self, ctx: ApplyContext) -> None:
+    def escalate(self, ctx: ApplyContext, summary: str, ask: str) -> None:
         issue = self._issues.for_feature(ctx.project.id, ctx.feature).get(ctx.incident.ticket)
         if issue is not None:
             self._host.add_issue_label(self._host_project(ctx), issue.number, NEEDS_HUMAN_LABEL)
+            self._host.comment_issue(
+                self._host_project(ctx),
+                issue.number,
+                f"Limo needs a human.\n\n{summary}\n\nQuestion: {ask}",
+            )
+        self._repo.set_ask(ctx.incident.id, ask)

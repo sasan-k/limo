@@ -13,6 +13,9 @@ class InboxService:
     def list(self) -> list[Hold]:
         return self._repo.open_list()
 
+    def has(self, hold_id: str) -> bool:
+        return self._repo.get(hold_id) is not None
+
     def take(self, hold_id: str) -> Hold:
         found = self._repo.get(hold_id)
         if found is None:
