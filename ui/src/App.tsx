@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useLiveEvents } from "@/api/events";
+import { RunnerSwitch } from "@/components/RunnerSwitch";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { AgentsPage } from "@/pages/AgentsPage";
@@ -39,7 +40,10 @@ export function App() {
             </Button>
           ))}
         </nav>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <RunnerSwitch />
+          <ThemeToggle />
+        </div>
       </header>
       <main className="p-6">
         <Page />

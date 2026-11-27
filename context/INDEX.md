@@ -11,7 +11,7 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/api` — REST + SSE → calls `runner`, `agents`, `store`, `cost` (call)
 - `engine/limo/agents` — prompt registry, run service (tool loop, background worker), per-agent tools → `llm`, `executor` (call)
 - `engine/limo/llm` — LLM port + Anthropic adapter → Claude Messages API (HTTPS)
-- `engine/limo/runner` — startup recovery (`recovery.py`: active runs → `interrupted`, workspace reset); step: ship `review` tickets, else dispatch by ticket status via `fx` (one run at a time); poll merge requests → `agents`, `hosts`, `vcs`, `executor` (fx)
+- `engine/limo/runner` — `loop.py`: runner switch + loop thread (while on, steps every feature; polls hosts every `host_poll_s`); startup recovery (`recovery.py`: active runs → `interrupted`, workspace reset); step: ship `review` tickets, else dispatch by ticket status via `fx` (one run at a time); poll merge requests → `agents`, `hosts`, `vcs`, `executor` (fx)
 - `engine/limo/hosts` — RepoHost port (open MR, auto-merge, status; issues with label `limo:<status>`; no merge), real adapters `GitHubHost` (REST + GraphQL auto-merge) and `GitLabHost` (REST v4) behind `RoutedHost` (default; shared `hosts/http.py`), `merge_requests` + `issues` repos; issue sync runs on each step
 - `engine/limo/vcs` — git via executor: ticket branches `limo/<feature>/<ticket>`, commit (never `work/`), push
 - `engine/limo/features` — intake (requirements saved to `work/<f>/requirements/`), phases architecture → spec → nfr → tickets driven by the runner

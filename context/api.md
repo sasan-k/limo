@@ -41,6 +41,7 @@
 - incidents: `engine/limo/api/incidents_routes.py` (`GET …/features/{feature}/incidents`); step reasons `resolving`, `resolved`, `needs_human`
 - runs: `engine/limo/api/runs_routes.py` (`POST /api/projects/{name}/runs`, `GET /api/runs/{id}`, `GET /api/runs/{id}/tool-calls`)
 - prompts: `engine/limo/api/prompts_routes.py` (`GET /api/agents/{name}/files`; `GET|PUT …/file?path=`; `GET …/history?path=`; `POST …/rollback?path=`; 409 `version_conflict`|`git_failed`)
+- runner switch: `engine/limo/api/switch_routes.py` (`GET/PUT /api/runner` `{"enabled"}`; in memory, off at start; loop in `engine/limo/runner/loop.py`)
 - board: `engine/limo/api/board_routes.py` (`GET /api/projects/{name}/board` → statuses + features (`work/*/map.yaml`) with tickets from `fx board`; 409 `map_invalid`)
 - agent cards: `engine/limo/api/cards_routes.py` (`GET /api/agent-cards` → 7 cards in AGENT_NAMES order; state idle|active|stuck)
 - SSE: `engine/limo/api/events.py` (`GET /api/events`; first line `: connected`, `: ping` every `sse_heartbeat_s`); published now: run.started, run.updated, run.finished, cost.updated, incident.opened, prompt.saved via `EventBus` (`limo/events/bus.py`)

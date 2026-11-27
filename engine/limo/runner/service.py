@@ -1,3 +1,4 @@
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -50,8 +51,14 @@ class RunnerService:
         self._incidents = deps.incidents
         self._issue_repo = deps.issue_repo
         self._max_concurrent = max_concurrent
+        self._lock = threading.RLock()
 
     def step(self, project_name: str, feature: str) -> StepResult:
+        """One runner step; serialized so the runner loop and HTTP callers never dispatch twice."""
+        with self._lock:
+            return self._step(project_name, feature)
+
+    def _step(self, project_name: str, feature: str) -> StepResult:
         project = self._projects.get_by_name(project_name)
         if project is None:
             raise NotFound("project_not_found", f"project {project_name} not found")
@@ -126,6 +133,10 @@ class RunnerService:
         return self.step(name, feature)
 
     def poll(self, project_name: str, feature: str) -> PollResult:
+        with self._lock:
+            return self._poll(project_name, feature)
+
+    def _poll(self, project_name: str, feature: str) -> PollResult:
         project = self._projects.get_by_name(project_name)
         if project is None:
             raise NotFound("project_not_found", f"project {project_name} not found")
