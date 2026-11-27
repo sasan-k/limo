@@ -12,8 +12,10 @@ from limo.agents.settings_repo import AgentSettingsRepo
 from limo.agents.tools import ToolBox
 from limo.api.agents_routes import agents_router
 from limo.api.budget_routes import budget_router
+from limo.api.cards_routes import cards_router
 from limo.api.cost_routes import cost_router
 from limo.api.errors import install_error_handlers
+from limo.api.events import events_router
 from limo.api.features_routes import features_router
 from limo.api.inbox_routes import inbox_router
 from limo.api.incidents_routes import incidents_router
@@ -22,10 +24,13 @@ from limo.api.runner_routes import runner_router
 from limo.api.runs_routes import runs_router
 from limo.budget.repo import BudgetRepo
 from limo.budget.service import BudgetService
+from limo.cards.repo import CardRepo
+from limo.cards.service import AgentCardService
 from limo.config import Settings
 from limo.cost.pricing import to_micros
 from limo.cost.repo import PriceRepo, UsageRepo
 from limo.cost.service import CostService
+from limo.events.bus import EventBus
 from limo.executor.local import LocalExecutor
 from limo.executor.ports import Executor
 from limo.features.phases import PhaseService
@@ -78,6 +83,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         ProjectRepo(settings.db_path),
         GitOps(deps.executor, settings.command_timeout_s),
     ).recover()
+    events = EventBus()
     projects = ProjectService(
         ProjectRepo(settings.db_path), deps.executor, settings.workspaces_dir, settings.command_timeout_s
     )
@@ -105,6 +111,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
         deps.llm,
         ToolBox(deps.executor, settings.command_timeout_s),
         RunConfig(settings.skills_dir, settings.default_model, settings.max_turns, fx_db=settings.db_path),
+        events,
     )
     board = TicketBoard(deps.executor, settings.db_path, settings.command_timeout_s)
     git = GitOps(deps.executor, settings.command_timeout_s)
@@ -130,6 +137,7 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
                     host,
                     IssueRepo(settings.db_path),
                     ProjectRepo(settings.db_path),
+                    events=events,
                 ),
                 settings.run_timeout_s,
             ),
@@ -153,6 +161,10 @@ def create_app(settings: Settings, deps: Deps | None = None) -> FastAPI:
             AgentService(AgentRegistry(settings.skills_dir), agent_settings, settings.default_model)
         )
     )
+    app.include_router(
+        cards_router(AgentCardService(CardRepo(settings.db_path), agent_settings, settings.default_model))
+    )
+    app.include_router(events_router(events, settings.sse_heartbeat_s))
     app.include_router(runs_router(runs))
     app.include_router(cost_router(cost))
     app.include_router(runner_router(runner))

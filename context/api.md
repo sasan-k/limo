@@ -40,4 +40,5 @@
 - features: `engine/limo/api/features_routes.py` (`POST/GET /api/projects/{name}/features`); step reason `stage_failed`; runs carry `args` (e.g. `mode=init-existing`)
 - incidents: `engine/limo/api/incidents_routes.py` (`GET …/features/{feature}/incidents`); step reasons `resolving`, `resolved`, `needs_human`
 - runs: `engine/limo/api/runs_routes.py` (`POST /api/projects/{name}/runs`, `GET /api/runs/{id}`, `GET /api/runs/{id}/tool-calls`)
-- SSE: (planned) `engine/limo/api/events.py`
+- agent cards: `engine/limo/api/cards_routes.py` (`GET /api/agent-cards` → 7 cards in AGENT_NAMES order; state idle|active|stuck)
+- SSE: `engine/limo/api/events.py` (`GET /api/events`; first line `: connected`, `: ping` every `sse_heartbeat_s`); published now: run.started, run.updated, run.finished, cost.updated, incident.opened via `EventBus` (`limo/events/bus.py`)

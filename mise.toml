@@ -4,38 +4,65 @@ python = "3.12.16"
 uv = "0.13.10"
 
 [tasks.setup]
-description = "Install engine dependencies"
-dir = "engine"
-run = "uv sync"
+description = "Install engine and UI dependencies (and the e2e browser)"
+run = ["cd engine && uv sync", "cd ui && npm ci", "cd ui && npx playwright install chromium"]
 
-[tasks.up]
+[tasks."up:engine"]
 description = "Start the engine on 127.0.0.1:8700"
 dir = "engine"
 run = "uv run uvicorn limo.app:app_from_env --factory --host 127.0.0.1 --port 8700"
+
+[tasks."up:ui"]
+description = "Start the UI dev server on 127.0.0.1:5173 (proxies /api to the engine)"
+dir = "ui"
+run = "npx vite"
+
+[tasks.up]
+description = "Start engine and UI"
+depends = ["up:engine", "up:ui"]
+
+[tasks."gen:api"]
+description = "Regenerate UI API types from the engine OpenAPI document"
+run = [
+  "cd engine && uv run python -m tests.e2e_app --openapi > ../ui/openapi.json",
+  "cd ui && npx openapi-typescript openapi.json -o src/api/schema.d.ts",
+]
 
 [tasks."test:engine"]
 description = "Run engine tests; pass pytest args after --"
 dir = "engine"
 run = "uv run pytest"
 
+[tasks."test:ui"]
+description = "Run UI component tests (Vitest); pass vitest args after --"
+dir = "ui"
+run = "npx vitest run"
+
+[tasks."test:e2e"]
+description = "Run UI e2e tests (Playwright) against the engine with fakes"
+dir = "ui"
+run = "npx playwright test"
+
 [tasks.test]
 description = "Run all test suites"
-depends = ["test:engine"]
+depends = ["test:engine", "test:ui", "test:e2e"]
 
 [tasks.lint]
-description = "Lint and format check (ruff)"
-dir = "engine"
-run = ["uv run ruff check .", "uv run ruff format --check ."]
+description = "Lint and format check (ruff; eslint + prettier)"
+run = [
+  "cd engine && uv run ruff check .",
+  "cd engine && uv run ruff format --check .",
+  "cd ui && npx eslint .",
+  "cd ui && npx prettier --check .",
+]
 
 [tasks.fmt]
-description = "Auto-format and auto-fix (ruff)"
-dir = "engine"
-run = ["uv run ruff check --fix .", "uv run ruff format ."]
+description = "Auto-format and auto-fix (ruff; prettier)"
+run = ["cd engine && uv run ruff check --fix .", "cd engine && uv run ruff format .", "cd ui && npx prettier --write ."]
 
 [tasks.types]
-description = "Type check (mypy --strict)"
-dir = "engine"
-run = "uv run mypy"
+description = "Type check (mypy --strict; tsc --noEmit)"
+run = ["cd engine && uv run mypy", "cd ui && npx tsc --noEmit"]
 
 [tasks.arch]
 description = "Architecture import contracts (import-linter)"
@@ -45,7 +72,7 @@ run = "uv run lint-imports"
 [tasks.dup]
 description = "Duplicate code check (jscpd)"
 dir = "engine"
-run = "npx --yes jscpd@4.0.5 --threshold 0 --min-lines 10 --gitignore limo"
+run = "npx --yes jscpd@4.0.5 --threshold 0 --min-lines 10 --gitignore --ignore '**/schema.d.ts,**/components/ui/**' limo ../ui/src"
 
 [tasks.gates]
 description = "All quality gates"

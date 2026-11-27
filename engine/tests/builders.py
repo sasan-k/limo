@@ -1,6 +1,8 @@
+import json
 import os
 import subprocess
 import time
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -130,6 +132,21 @@ def start_and_wait(
     r = client.post(f"/api/projects/{project}/runs", json=body)
     assert r.status_code == 202
     return wait_run(client, r.json()["id"])
+
+
+def next_event(lines: Iterator[str], event_type: str, timeout_s: float = 5.0) -> dict[str, Any]:
+    """Read SSE lines until an event of `event_type`; return its parsed data envelope.
+    Needs a heartbeat shorter than `timeout_s` so the loop wakes up."""
+    deadline = time.monotonic() + timeout_s
+    current: str | None = None
+    for line in lines:
+        if time.monotonic() > deadline:
+            break
+        if line.startswith("event: "):
+            current = line.removeprefix("event: ")
+        elif line.startswith("data: ") and current == event_type:
+            return dict(json.loads(line.removeprefix("data: ")))
+    raise AssertionError(f"no {event_type} event within {timeout_s} s")
 
 
 def drive_to_review(client: TestClient, llm: FakeLlm, settings: Settings, project: str = "shop") -> None:

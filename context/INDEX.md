@@ -24,8 +24,10 @@ Entry points: HTTP API + SSE (`engine`), web UI (`ui`), `mise` tasks, `fx` CLI (
 - `engine/limo/hosts` — RepoHost port; GitLab + GitHub adapters → host REST APIs (HTTPS)
 - `engine/limo/executor` — runs commands in a workspace via `mise exec` (subprocess)
 - `engine/limo/store` — SQLite; `fx` owns the `tickets` table (file)
-- `ui` — React SPA → `engine/limo/api` via REST + SSE
-real GitHub/GitLab adapters (TKT-18), `ui` is (planned); see layout.md.
+- `engine/limo/events` — in-process `EventBus`; services publish, `api/events.py` streams SSE
+- `engine/limo/cards` — agent card read model (one SQL query) → `store`
+- `ui` — React SPA → `engine/limo/api` via REST + SSE (react-query, invalidated by SSE)
+real GitHub/GitLab adapters (TKT-18); see layout.md.
 
 ## Stack
 Python 3.12 · FastAPI · SQLite · Anthropic SDK · React + TypeScript + Vite + Tailwind + shadcn/ui · mise — details: stack.md
@@ -48,7 +50,8 @@ Python 3.12 · FastAPI · SQLite · Anthropic SDK · React + TypeScript + Vite +
 - run: `mise run up`
 - build: `mise run build`
 - test (all): `mise run test`
-- test (one): `mise run test:engine -- -k ft_<t>_<k>` · UI: `mise run test:ui -- -t "FT-<t>.<k>"`
+- test (one): `mise run test:engine -- -k ft_<t>_<k>` · UI: `mise run test:ui -- -t "FT-<t>.<k>"` · e2e: `mise run test:e2e`
+- dev servers: `mise run up` (= `up:engine` + `up:ui`; vite proxies `/api` to `LIMO_API_URL`) · API types: `mise run gen:api`
 - lint/format: `mise run lint`
 - quality gates: see code-rules.md › Quality gates
 

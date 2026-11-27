@@ -7,6 +7,7 @@ from uuid import uuid4
 from limo.agents.models import Run, RunIn
 from limo.agents.service import RunService
 from limo.common.errors import Conflict, ExternalError, NotFound
+from limo.events.bus import EventBus
 from limo.hosts.issue_repo import IssueRepo
 from limo.hosts.ports import HostError, HostProject, RepoHost
 from limo.incidents.actions import parse_action
@@ -39,6 +40,7 @@ class IncidentDeps:
     host: RepoHost
     issues: IssueRepo
     projects: ProjectRepo
+    events: EventBus
 
 
 class IncidentService:
@@ -50,6 +52,7 @@ class IncidentService:
         self._host = deps.host
         self._issues = deps.issues
         self._projects = deps.projects
+        self._events = deps.events
         self._timeout_s = timeout_s
 
     def sweep_timeouts(self, project: Project) -> int:
@@ -98,6 +101,16 @@ class IncidentService:
         self._repo.close(incident.id, status, text)
         return StepResult(run=None, reason=status)
 
+    def _record(self, project: Project, feature: str, row: IncidentRow) -> None:
+        self._repo.add(project.id, feature, row)
+        payload: dict[str, object] = {
+            "incident_id": row.id,
+            "feature": feature,
+            "ticket": row.ticket,
+            "trigger": row.trigger,
+        }
+        self._events.publish("incident.opened", project.id, payload)
+
     def _follow_up(
         self, project: Project, feature: str, states: list[TicketState], incident: IncidentRow
     ) -> StepResult:
@@ -125,7 +138,7 @@ class IncidentService:
             action=None,
             human_input=True,
         )
-        self._repo.add(project.id, feature, row)
+        self._record(project, feature, row)
         return self._start_resolver(project, feature, row)
 
     def consume_note(self, project_id: str, feature: str, ticket: str) -> str | None:
@@ -214,7 +227,7 @@ class IncidentService:
             resolver_run_id=None,
             action=None,
         )
-        self._repo.add(project.id, feature, row)
+        self._record(project, feature, row)
         if stuck:
             ticket = state.id
             try:
